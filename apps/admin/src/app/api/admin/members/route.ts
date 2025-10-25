@@ -6,6 +6,33 @@ import { NextResponse } from 'next/server';
 import { pool } from 'lib/db';
 import { assertAdmin } from 'lib/admin';
 
+export async function GET(req: Request) {
+  try {
+    assertAdmin(req);
+    const url = new URL(req.url);
+    const q = (url.searchParams.get('q') || '').trim();
+    const limit = Math.min(200, Number(url.searchParams.get('limit') || 50));
+    const params: any[] = [];
+    let where = '';
+    if (q) {
+      params.push(`%${q}%`);
+      where = `WHERE full_name ILIKE $${params.length}`;
+    }
+    const { rows } = await pool.query(
+      `SELECT id, full_name, phone, email, created_at
+       FROM members
+       ${where}
+       ORDER BY created_at DESC
+       LIMIT ${limit}`, params
+    );
+    return NextResponse.json({ ok: true, members: rows }, { status: 200 });
+  } catch (e: any) {
+    if (e?.message === 'UNAUTHORIZED') return NextResponse.json({ ok: false }, { status: 401 });
+    console.error('admin/members GET error', e);
+    return NextResponse.json({ ok: false, error: 'SERVER_ERROR' }, { status: 500 });
+  }
+}
+
 export async function POST(req: Request) {
   try {
     assertAdmin(req);
