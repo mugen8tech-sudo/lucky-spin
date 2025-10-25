@@ -27,9 +27,9 @@ export async function GET(req: Request) {
     );
     return NextResponse.json({ ok: true, members: rows }, { status: 200 });
   } catch (e: any) {
-    if (e?.message === 'UNAUTHORIZED') return NextResponse.json({ ok: false }, { status: 401 });
+    if (e?.message === 'UNAUTHORIZED') return NextResponse.json({ ok: false, error: 'UNAUTHORIZED' }, { status: 401 });
     console.error('admin/members GET error', e);
-    return NextResponse.json({ ok: false, error: 'SERVER_ERROR' }, { status: 500 });
+    return NextResponse.json({ ok: false, error: e?.message || 'SERVER_ERROR' }, { status: 500 });
   }
 }
 
@@ -55,8 +55,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true, member: rows[0] }, { status: 201 });
   } catch (e: any) {
-    if (e?.message === 'UNAUTHORIZED') return NextResponse.json({ ok: false }, { status: 401 });
+    if (e?.message === 'UNAUTHORIZED') return NextResponse.json({ ok: false, error: 'UNAUTHORIZED' }, { status: 401 });
     console.error('admin/members POST error', e);
-    return NextResponse.json({ ok: false, error: 'SERVER_ERROR' }, { status: 500 });
+    return NextResponse.json({ ok: false, error: e?.message || 'SERVER_ERROR' }, { status: 500 });
   }
 }
