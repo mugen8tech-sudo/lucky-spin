@@ -1,3 +1,4 @@
+import './globals.css';
 import Link from 'next/link';
 import AdminKeyBar from '../components/AdminKeyBar';
 
@@ -9,18 +10,14 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id">
-      <body style={{
-        margin: 0,
-        fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif',
-        background: '#0f172a',
-        color: '#e2e8f0'
-      }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: 24 }}>
-          <header style={{display:'flex', gap:16, alignItems:'center', marginBottom:12}}>
+      <body>
+        <div className="container">
+          <header className="header">
             <Link href="/" style={{fontWeight:700}}>Lucky Spin Admin</Link>
-            <nav style={{display:'flex', gap:12}}>
+            <nav className="nav">
               <Link href="/members">Member & Voucher</Link>
               <Link href="/vouchers">Riwayat Voucher</Link>
+              <Link href="/health">Health</Link>
             </nav>
           </header>
           <AdminKeyBar />
