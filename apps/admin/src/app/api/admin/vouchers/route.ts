@@ -44,6 +44,6 @@ export async function GET(req: Request) {
   } catch (e: any) {
     if (e?.message === 'UNAUTHORIZED') return NextResponse.json({ ok: false }, { status: 401 });
     console.error('admin/vouchers GET error', e);
-    return NextResponse.json({ ok: false, error: 'SERVER_ERROR' }, { status: 500 });
+    return NextResponse.json({ ok: false, error: e?.message || 'SERVER_ERROR' }, { status: 500 });
   }
 }
