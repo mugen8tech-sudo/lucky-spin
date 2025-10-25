@@ -1,8 +1,13 @@
+import Link from 'next/link';
+
 export default function Page() {
   return (
-    <main style={{padding: 24}}>
-      <h1>Lucky Spin — Admin API</h1>
-      <p>UI admin akan dibuat di Langkah 3. Untuk sekarang, endpoint API sudah tersedia.</p>
+    <main>
+      <h1>Dashboard</h1>
+      <ul style={{marginTop:12, lineHeight:2}}>
+        <li><Link href="/members">Daftarkan Member & Generate Voucher</Link></li>
+        <li><Link href="/vouchers">Riwayat Voucher & Proses</Link></li>
+      </ul>
     </main>
   );
 }
