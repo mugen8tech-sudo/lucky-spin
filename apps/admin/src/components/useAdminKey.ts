@@ -22,9 +22,9 @@ export function useAdminKey() {
     setKeyState(k);
   };
 
-  const headers = key
-    ? { 'x-admin-key': key, 'Content-Type': 'application/json' }
-    : { 'Content-Type': 'application/json' };
+  // 👉 Pastikan selalu Record<string,string>
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (key) headers['x-admin-key'] = key;
 
   return { key, setKey, ready, headers };
 }
