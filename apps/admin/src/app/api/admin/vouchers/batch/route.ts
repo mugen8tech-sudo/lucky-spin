@@ -69,7 +69,7 @@ export async function POST(req: Request) {
     await client.query('ROLLBACK');
     if (e?.message === 'UNAUTHORIZED') return NextResponse.json({ ok: false }, { status: 401 });
     console.error('admin/vouchers/batch POST error', e);
-    return NextResponse.json({ ok: false, error: 'SERVER_ERROR' }, { status: 500 });
+    return NextResponse.json({ ok: false, error: e?.message || 'SERVER_ERROR' }, { status: 500 });
   } finally {
     client.release();
   }
