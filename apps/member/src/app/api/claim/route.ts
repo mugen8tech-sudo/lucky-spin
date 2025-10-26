@@ -5,7 +5,6 @@ export const revalidate = 0;
 import { NextResponse } from 'next/server';
 import { pool } from 'lib/db';
 
-/** Ambil IP & UA untuk audit */
 function getClientInfo(req: Request) {
   const ua = req.headers.get('user-agent') || '';
   const fwd = req.headers.get('x-forwarded-for') || '';
@@ -13,13 +12,10 @@ function getClientInfo(req: Request) {
   return { ip, ua };
 }
 
-/** Susun wheel dari tabel allowed_denominations */
 async function buildWheelConfig(amount: number) {
   const { rows } = await pool.query(`SELECT amount FROM allowed_denominations ORDER BY amount DESC`);
   let segs = rows.map(r => Number(r.amount));
   if (!segs.includes(amount)) segs = [...segs, amount];
-
-  // shuffle sederhana
   for (let i = segs.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [segs[i], segs[j]] = [segs[j], segs[i]];
@@ -30,37 +26,26 @@ async function buildWheelConfig(amount: number) {
 }
 
 export async function POST(req: Request) {
-  const client = await pool.connect();
   try {
-    const { code } = await req.json().catch(() => ({} as any));
-    if (!code || typeof code !== 'string' || code.trim().length < 4) {
+    const body = await req.json().catch(() => ({} as any));
+    const raw = (body?.code ?? '').toString();
+    if (!raw || raw.trim().length < 4) {
       return NextResponse.json({ ok: false, reason: 'INVALID_CODE' }, { status: 400 });
     }
-    const clean = code.trim().toUpperCase();
+    const code = raw.trim().toUpperCase(); // kode kita uppercase dari admin
     const { ip, ua } = getClientInfo(req);
 
-    // panggil fungsi dengan schema eksplisit + cast text
-    let rows;
-    try {
-      const res = await client.query(
-        `SELECT * FROM public.claim_voucher_by_code($1::text, $2::text, $3::text);`,
-        [clean, ip || null, ua || null]
-      );
-      rows = res.rows;
-    } catch (e: any) {
-      // kirim detail agar bisa didiagnosa dari UI/log
-      console.error('claim db error', e);
-      return NextResponse.json(
-        { ok: false, reason: 'SERVER_ERROR', detail: e?.message || String(e) },
-        { status: 500 }
-      );
-    }
+    // panggil fungsi dengan schema eksplisit
+    const claimRes = await pool.query(
+      `SELECT * FROM public.claim_voucher_by_code($1::text, $2::text, $3::text);`,
+      [code, ip || null, ua || null]
+    );
 
-    // jika fungsi mengembalikan 0 baris → diagnosis reason yg tepat
-    if (!rows || rows.length === 0) {
-      const check = await client.query(
-        `SELECT status, expires_at FROM vouchers WHERE code = $1`,
-        [clean]
+    if (claimRes.rowCount === 0) {
+      // diagnosis: kenapa nol baris
+      const check = await pool.query(
+        `SELECT status, expires_at FROM vouchers WHERE code=$1`,
+        [code]
       );
       if (check.rowCount === 0) {
         return NextResponse.json({ ok: false, reason: 'INVALID_CODE' }, { status: 404 });
@@ -75,17 +60,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, reason: 'UNABLE_TO_CLAIM' }, { status: 400 });
     }
 
-    // sukses: bangun wheel + balikan nominal
-    const amount = Number(rows[0].amount);
+    const amount = Number(claimRes.rows[0].amount);
     const wheel = await buildWheelConfig(amount);
     return NextResponse.json({ ok: true, amount, wheel }, { status: 200 });
   } catch (e: any) {
-    console.error('claim error', e);
+    // pastikan SELALU JSON (agar UI tidak "Respon tidak valid.")
+    console.error('claim fatal', e);
     return NextResponse.json(
       { ok: false, reason: 'SERVER_ERROR', detail: e?.message || String(e) },
       { status: 500 }
     );
-  } finally {
-    client.release();
   }
 }
