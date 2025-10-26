@@ -63,3 +63,28 @@ a:hover { text-decoration: underline; }
   white-space: pre-wrap; max-height: 240px; overflow: auto;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
+
+/* --- Dropdown & Chips --- */
+.dropdown { position: relative; }
+.dropdown-menu {
+  position: absolute; z-index: 40; top: calc(100% + 4px); left: 0; right: 0;
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  max-height: 240px; overflow: auto; box-shadow: 0 12px 24px rgba(0,0,0,.45);
+}
+.dropdown-item { padding: 10px 12px; cursor: pointer; }
+.dropdown-item:hover, .dropdown-item[aria-selected="true"] { background: #0b1323; }
+.dropdown-empty { padding: 10px 12px; color: var(--muted); }
+
+.chips { display:flex; gap:8px; flex-wrap:wrap; }
+.chip {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:6px 10px; border-radius:16px;
+  background:#0b1323; border:1px solid var(--border);
+}
+.chip .chip-remove {
+  width:18px; height:18px; border-radius:999px;
+  display:grid; place-items:center; border:1px solid var(--border);
+  background:#111827; cursor:pointer; font-weight:700; line-height:0;
+}
+.chip .chip-remove:hover { background:#1f2937; }
+
