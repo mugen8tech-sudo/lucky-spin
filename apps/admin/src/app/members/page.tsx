@@ -1,50 +1,85 @@
 'use client';
 
 import { useAdminKey } from '../../components/useAdminKey';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 type Member = { id: string; full_name: string; email?: string; phone?: string; };
 type Denom = number;
+
 const fmt = (n:number)=> new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n);
+
+// helpers
+const pad = (n:number)=> String(n).padStart(2,'0');
+function toLocalDatetimeInputValue(d: Date) {
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function normalizeName(s:string){ return s.trim().toLowerCase(); }
+function parseAmountInput(s:string): number | null {
+  const digits = s.replace(/[^\d]/g,'');
+  if (!digits) return null;
+  let n = parseInt(digits, 10);
+  // Ketik "15" → 15.000 (exact thousands)
+  if (n < 1000) n = n * 1000;
+  return n;
+}
 
 type Flash = { kind:'success'|'error', text:string } | null;
 
 export default function MembersPage(){
   const { ready, headers, key } = useAdminKey();
-  const [members,setMembers] = useState<Member[]>([]);
-  const [mQuery,setMQuery] = useState('');
-  const [loadingMembers,setLoadingMembers] = useState(false);
 
+  // DATA
+  const [members,setMembers] = useState<Member[]>([]);
   const [denoms,setDenoms] = useState<Denom[]>([]);
-  const [selMember,setSelMember] = useState<string>('');
-  const [rows,setRows] = useState<{amount:number; count:number}[]>([{amount:50000, count:1}]);
+
+  // MEMBER SEARCH (exact)
+  const [memberSearch, setMemberSearch] = useState('');
+  const [selMember, setSelMember] = useState<string>('');
+  const [memberMsg, setMemberMsg] = useState<string>('');
+
+  // NOMINAL QUICK-ADD
+  const [nominalSearch, setNominalSearch] = useState('');
+  const [rows,setRows] = useState<{amount:number; count:number}[]>([]);
   const [expiresAt,setExpiresAt] = useState<string>('');
   const [genLoading,setGenLoading] = useState(false);
   const [generated,setGenerated] = useState<{code:string}[]>([]);
   const [memForm,setMemForm]= useState({ fullName:'', phone:'', email:''});
   const [memLoading,setMemLoading]= useState(false);
   const [flash,setFlash]= useState<Flash>(null);
+  const [loadingMembers,setLoadingMembers] = useState(false);
 
+  // Refs untuk navigasi keyboard
+  const memberInputRef = useRef<HTMLInputElement>(null);
+  const nominalInputRef = useRef<HTMLInputElement>(null);
+  const expiresRef = useRef<HTMLInputElement>(null);
+  const generateBtnRef = useRef<HTMLButtonElement>(null);
+
+  // Load members & denoms sekali saat siap
   useEffect(()=> {
     if(!ready || !key) return;
     const controller = new AbortController();
     setLoadingMembers(true);
-    fetch(`/api/admin/members?limit=200&q=${encodeURIComponent(mQuery)}`, { headers, signal: controller.signal })
-      .then(r=>r.json())
-      .then(d=>{ if(d?.ok) setMembers(d.members); else setFlash({kind:'error', text:d?.error || 'Gagal memuat member'}); })
+    // Ambil semua (maks) supaya pencarian exact dilakukan di client
+    fetch(`/api/admin/members?limit=1000`, { headers, signal: controller.signal })
+      .then(r=>r.json()).then(d=>{ if(d?.ok) setMembers(d.members); })
       .catch(()=>{})
       .finally(()=> setLoadingMembers(false));
-    return ()=> controller.abort();
-  }, [ready, key, mQuery]);
-
-  useEffect(()=> {
-    if(!ready || !key) return;
     fetch('/api/admin/denominations', { headers })
       .then(r=>r.json()).then(d=> { if(d?.ok) setDenoms(d.amounts as number[]); });
+    return ()=> controller.abort();
   }, [ready, key]);
 
-  const canGenerate = useMemo(()=> selMember && rows.every(r => r.amount>0 && r.count>0), [selMember, rows]);
+  // Set default masa berlaku = +14 hari dari saat halaman dibuka
+  useEffect(()=>{
+    if (!ready) return;
+    const d = new Date(); d.setDate(d.getDate()+14);
+    setExpiresAt(toLocalDatetimeInputValue(d));
+  }, [ready]);
 
+  // computed
+  const canGenerate = useMemo(()=> selMember && rows.every(r => r.amount>0 && r.count>0) && rows.length>0, [selMember, rows]);
+
+  // Add member via form (opsional, tetap ada)
   async function addMember(e: React.FormEvent){
     e.preventDefault();
     if(!memForm.fullName.trim()) return;
@@ -62,12 +97,61 @@ export default function MembersPage(){
     if(data?.ok){
       setFlash({kind:'success', text:'Member berhasil dibuat.'});
       setMemForm({fullName:'', phone:'', email:''});
-      const mres = await fetch(`/api/admin/members?limit=200`, { headers });
+      // refresh list member & set selected
+      const mres = await fetch(`/api/admin/members?limit=1000`, { headers });
       const md = await mres.json();
       if(md?.ok) setMembers(md.members);
       setSelMember(data.member.id);
+      setMemberSearch(data.member.full_name);
+      // Fokus ke nominal
+      setTimeout(()=> nominalInputRef.current?.focus(), 0);
     } else {
       setFlash({kind:'error', text:`Gagal: ${data?.error || res.status}`});
+    }
+  }
+
+  // === MEMBER: exact search ===
+  function handleMemberEnter(){
+    const name = memberSearch.trim();
+    if (!name) return;
+    const found = members.find(m => normalizeName(m.full_name) === normalizeName(name));
+    if (found){
+      setSelMember(found.id);
+      setMemberSearch(found.full_name); // pastikan case sesuai DB
+      setMemberMsg('');
+      // Fokus ke nominal
+      setTimeout(()=> nominalInputRef.current?.focus(), 0);
+    } else {
+      setSelMember('');
+      setMemberMsg(`Tidak ada member bernama persis "${name}".`);
+    }
+  }
+  function clearMember(){
+    setSelMember('');
+    setMemberSearch('');
+    setMemberMsg('');
+    setTimeout(()=> memberInputRef.current?.focus(), 0);
+  }
+
+  // === NOMINAL QUICK ADD ===
+  function addNominalFromSearch(){
+    const n = parseAmountInput(nominalSearch);
+    if (n && denoms.includes(n)) {
+      setRows(prev => {
+        const i = prev.findIndex(r=>r.amount===n);
+        if (i !== -1) {
+          const clone = prev.slice();
+          clone[i] = { ...clone[i], count: clone[i].count + 1 };
+          return clone;
+        }
+        return [...prev, { amount: n, count: 1 }];
+      });
+      setNominalSearch('');
+      // tetap fokus di input nominal (biar bisa ketik lagi langsung)
+      setTimeout(()=> nominalInputRef.current?.focus(), 0);
+      setFlash(null);
+    } else {
+      setFlash({kind:'error', text:`Nominal "${nominalSearch}" tidak ditemukan di daftar.`});
     }
   }
 
@@ -88,12 +172,15 @@ export default function MembersPage(){
       }
       setGenerated(out);
       setFlash({kind:'success', text:`Sukses membuat ${out.length} kode.`});
+      // selesai generate → kosongkan rows & fokus kembali ke nominal untuk batch berikutnya
+      setRows([]);
+      setNominalSearch('');
+      setTimeout(()=> nominalInputRef.current?.focus(), 0);
     } catch (e:any) {
       setFlash({kind:'error', text:`Gagal: ${e.message || e}`});
     } finally { setGenLoading(false); }
   }
 
-  function addRow(){ setRows(rs => [...rs, {amount: denoms[0] || 50000, count:1}]); }
   function updateRow(i:number, patch: Partial<{amount:number; count:number}>){
     setRows(rs => rs.map((r,idx) => idx===i ? {...r, ...patch} : r));
   }
@@ -109,6 +196,7 @@ export default function MembersPage(){
       {flash && <div className={`alert ${flash.kind==='success'?'alert-success':'alert-error'}`}>{flash.text}</div>}
 
       <section className="grid-2">
+        {/* Panel A: Daftarkan Member (tetap seperti sebelumnya) */}
         <div className="card">
           <h2>Daftarkan Member</h2>
           <form onSubmit={addMember} style={{display:'grid', gap:8, marginTop:8}}>
@@ -127,46 +215,84 @@ export default function MembersPage(){
           </form>
         </div>
 
+        {/* Panel B: Generate Voucher (keyboard-first) */}
         <div className="card">
           <h2>Generate Voucher</h2>
 
-          <div style={{display:'flex', gap:8, alignItems:'center', margin:'8px 0'}}>
-            <input className="input" placeholder="Cari member…" value={mQuery} onChange={e=>setMQuery(e.target.value)} style={{flex:'0 0 40%'}} />
-            <span style={{opacity:0.8}}>{loadingMembers ? 'Memuat…' : `${members.length} member`}</span>
+          {/* Cari Member (exact) */}
+          <div style={{margin:'8px 0'}}>
+            <label> Cari Member (exact, satu kata)
+              <div style={{display:'flex', gap:8, alignItems:'center', marginTop:4}}>
+                <input
+                  ref={memberInputRef}
+                  className="input"
+                  placeholder={loadingMembers ? 'Memuat member…' : 'Ketik nama persis lalu Enter'}
+                  value={memberSearch}
+                  onChange={e=>{setMemberSearch(e.target.value); setMemberMsg('');}}
+                  onKeyDown={e=>{ if(e.key==='Enter'){ e.preventDefault(); handleMemberEnter(); } }}
+                  aria-label="Cari member (exact)"
+                />
+                {selMember && <button className="btn" onClick={clearMember} title="Ganti member (Esc)">Ganti</button>}
+              </div>
+            </label>
+            {memberMsg && <div className="alert alert-error" style={{marginTop:6}}>{memberMsg}</div>}
+            {selMember && <div style={{marginTop:6, opacity:.85}}>Dipilih: <strong>{memberSearch}</strong></div>}
           </div>
 
-          <label>Pilih Member
-            <select className="select" value={selMember} onChange={e=>setSelMember(e.target.value)} style={{marginTop:4}}>
-              <option value="">— pilih —</option>
-              {members.map(m=> <option key={m.id} value={m.id}>{m.full_name} {m.email ? `(${m.email})` : ''}</option>)}
-            </select>
-          </label>
-
+          {/* Quick add nominal by keyboard */}
           <div style={{marginTop:12}}>
-            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-              <h3>Nominal & Jumlah</h3>
-              <button className="btn" onClick={addRow}>+ Tambah Baris</button>
+            <h3 style={{margin:'6px 0'}}>Nominal cepat (Enter untuk tambah 1 kode)</h3>
+            <input
+              ref={nominalInputRef}
+              className="input"
+              placeholder="Ketik nominal persis lalu Enter (mis. 15 → Rp 15.000)"
+              value={nominalSearch}
+              onChange={e=>setNominalSearch(e.target.value)}
+              onKeyDown={e=>{ if(e.key==='Enter'){ e.preventDefault(); addNominalFromSearch(); } }}
+              disabled={!selMember}
+            />
+            <div style={{fontSize:12, opacity:.7, marginTop:6}}>
+              Daftar nominal: {denoms.map(a=>fmt(a)).join(' · ')}
             </div>
 
-            {rows.map((r, i)=> (
-              <div key={i} style={{display:'flex', gap:8, alignItems:'center', marginTop:8}}>
-                <select className="select" value={r.amount} onChange={e=>updateRow(i,{amount:Number(e.target.value)})}>
-                  {denoms.map(a => <option key={a} value={a}>{fmt(a)}</option>)}
-                </select>
-                <input className="input" type="number" min={1} value={r.count} onChange={e=>updateRow(i,{count:Number(e.target.value)})} style={{width:120}} />
-                <button className="btn" onClick={()=>removeRow(i)} disabled={rows.length===1}>Hapus</button>
+            {/* Daftar rows yang akan dibuat */}
+            {rows.length>0 && (
+              <div style={{marginTop:10}}>
+                <h4 style={{margin:'8px 0'}}>Akan dibuat</h4>
+                {rows.map((r,i)=>(
+                  <div key={i} style={{display:'flex', gap:8, alignItems:'center', marginTop:6}}>
+                    <div style={{minWidth:160}}>{fmt(r.amount)}</div>
+                    <input
+                      className="input"
+                      type="number" min={1}
+                      value={r.count}
+                      onChange={e=>updateRow(i,{count: Number(e.target.value)})}
+                      style={{width:120}}
+                    />
+                    <button className="btn" onClick={()=>removeRow(i)}>Hapus</button>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
 
-            <label style={{display:'block', marginTop:12}}>Masa Berlaku (opsional)
-              <input className="input" type="datetime-local" value={expiresAt} onChange={e=>setExpiresAt(e.target.value)} style={{marginTop:4}} />
+            {/* Masa berlaku */}
+            <label style={{display:'block', marginTop:12}}>Masa Berlaku (default +14 hari)
+              <input ref={expiresRef} className="input" type="datetime-local" value={expiresAt} onChange={e=>setExpiresAt(e.target.value)} style={{marginTop:4}} />
             </label>
 
-            <button className="btn btn-primary" disabled={!canGenerate || genLoading} onClick={generate} style={{marginTop:12}}>
+            {/* Generate */}
+            <button
+              ref={generateBtnRef}
+              className="btn btn-primary"
+              disabled={!canGenerate || genLoading}
+              onClick={generate}
+              style={{marginTop:12}}
+            >
               {genLoading ? 'Memproses…' : `Generate (${rows.reduce((s,r)=>s+r.count,0)} kode)`}
             </button>
           </div>
 
+          {/* Hasil */}
           {generated.length>0 && (
             <div style={{marginTop:16}}>
               <h3>Hasil ({generated.length} kode)</h3>
