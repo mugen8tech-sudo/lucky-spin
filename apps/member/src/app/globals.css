@@ -1,0 +1,70 @@
+:root {
+  --bg: #020617;
+  --card: #0b1220;
+  --border: #1f2937;
+  --text: #e5e7eb;
+  --muted: #94a3b8;
+  --link: #93c5fd;
+  --primary: #16a34a;
+  --primary-600: #15803d;
+  --danger: #ef4444;
+  --ring: #22c55e33;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: radial-gradient(1200px 800px at 50% -200px, #0b1220 0%, #020617 70%);
+  color: var(--text); font-family: ui-sans-serif, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+.container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+.input {
+  width: 100%; padding: 12px 14px; font-size: 16px;
+  border: 1px solid var(--border); border-radius: 10px; background: #0b1323; color: var(--text);
+}
+.input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px var(--ring); }
+
+.btn { padding: 12px 16px; border: 1px solid var(--border); border-radius: 10px; background: #111827; color: var(--text); cursor: pointer; }
+.btn:hover { filter: brightness(1.06); }
+.btn:disabled { opacity: .6; cursor: not-allowed; }
+.btn-primary { background: var(--primary); border-color: var(--primary-600); color: #fff; }
+
+.alert { padding: 12px 14px; border-radius: 10px; margin: 10px 0; }
+.alert-error { background: #3f0d0d; color: #fecaca; border: 1px solid #7f1d1d; }
+.alert-success { background: #052e16; color: #bbf7d0; border: 1px solid #14532d; }
+
+.wrapper {
+  display: grid; gap: 20px;
+  grid-template-columns: 1fr; align-items: start;
+}
+@media (min-width: 900px) {
+  .wrapper { grid-template-columns: 380px 1fr; }
+}
+
+/* WHEEL */
+.wheel-frame {
+  position: relative; display: grid; place-items: center;
+}
+.wheel {
+  width: min(520px, 90vw); height: min(520px, 90vw);
+  border-radius: 50%; display: grid; place-items: center;
+  will-change: transform;
+}
+.pointer {
+  position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+  width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent;
+  border-bottom: 28px solid #facc15; filter: drop-shadow(0 4px 4px rgba(0,0,0,.4));
+}
+
+/* Confetti */
+.confetti {
+  position: fixed; top: -10px; width: 8px; height: 14px;
+  opacity: .9; transform: translateY(-10px) rotate(0deg);
+  animation: fall 2400ms linear forwards;
+}
+@keyframes fall {
+  to { transform: translateY(110vh) rotate(520deg); opacity: .95; }
+}
