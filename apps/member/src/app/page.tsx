@@ -82,6 +82,7 @@ export default function Page() {
 
       return final;
     });
+  }
 
   function makeConfetti(){
     const colors = ['#fde047','#60a5fa','#34d399','#fb7185','#c084fc','#fbbf24','#2dd4bf'];
