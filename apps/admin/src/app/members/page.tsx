@@ -46,7 +46,7 @@ export default function MembersPage(){
   const [expiresAt,setExpiresAt] = useState<string>('');
 
   const [genLoading,setGenLoading] = useState(false);
-  const [generated,setGenerated] = useState<{code:string}[]>([]);
+  const [generated,setGenerated] = useState<{code:string; amount:number}[]>([]);
   const [memForm,setMemForm]= useState({ fullName:'', phone:'', email:''});
   const [memLoading,setMemLoading]= useState(false);
   const [flash,setFlash]= useState<Flash>(null);
@@ -102,6 +102,9 @@ export default function MembersPage(){
     setMemberOpen(false);
     setTimeout(()=> nominalInputRef.current?.focus(), 0);
   }
+
+  // tambahkan helper dekat helper lain:
+  function shortK(n:number){ return `${Math.round(n/1000)}k`; }
 
   // ====== NOMINAL DROPDOWN (EXACT ONLY, kosong saat belum ketik) ======
   const nomParsed = parseAmountInput(nominalSearch);
@@ -183,7 +186,11 @@ export default function MembersPage(){
         const res = await fetch('/api/admin/vouchers/batch', { method:'POST', headers, body: JSON.stringify(body) });
         const data = await res.json();
         if(!data?.ok){ throw new Error(data?.error || 'Batch gagal'); }
-        out.push(...(data.vouchers as any[]).map(v=>({code: v.code})));
+        out.push(...(data.vouchers as any[]).map(v => ({
+          code: v.code,
+          // kalau API sudah kirim amount, pakai itu; kalau tidak, pakai amount dari permintaan batch
+          amount: (v.amount ?? r.amount) as number
+        })));
       }
       setGenerated(out);
       setFlash({kind:'success', text:`Sukses membuat ${out.length} kode.`});
@@ -366,9 +373,23 @@ export default function MembersPage(){
           {generated.length>0 && (
             <div style={{marginTop:16}}>
               <h3>Hasil ({generated.length} kode)</h3>
-              <button className="btn" onClick={()=>navigator.clipboard.writeText(generated.map(g=>g.code).join('\n'))} style={{margin:'8px 0'}}>Copy Semua</button>
-              <div className="codebox">
-                {generated.map((g,idx)=> <div key={idx}>{g.code}</div>)}
+
+              {/* Copy tetap hanya kode tanpa nominal */}
+              <button
+                className="btn"
+                onClick={()=>navigator.clipboard.writeText(generated.map(g=>g.code).join('\n'))}
+                style={{margin:'8px 0'}}
+              >
+                Copy Semua
+              </button>
+
+              {/* Grid 6 kolom, tiap item: CODE (15k) */}
+              <div className="codegrid">
+                {generated.map((g,idx)=>(
+                  <div key={idx} className="codeitem">
+                    {g.code} <small>({shortK(g.amount)})</small>
+                  </div>
+                ))}
               </div>
             </div>
           )}
