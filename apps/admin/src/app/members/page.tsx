@@ -179,18 +179,20 @@ export default function MembersPage(){
     setGenerated([]);
     setFlash(null);
     try {
-      const out: {code:string}[] = [];
+      const out: { code: string; amount: number }[] = [];
       for (const r of rows){
         const body:any = { memberId: selMember, amount: r.amount, count: r.count };
         if (expiresAt) body.expiresAt = expiresAt;
         const res = await fetch('/api/admin/vouchers/batch', { method:'POST', headers, body: JSON.stringify(body) });
         const data = await res.json();
         if(!data?.ok){ throw new Error(data?.error || 'Batch gagal'); }
-        out.push(...(data.vouchers as any[]).map(v => ({
-          code: v.code,
-          // kalau API sudah kirim amount, pakai itu; kalau tidak, pakai amount dari permintaan batch
-          amount: (v.amount ?? r.amount) as number
-        })));
+        out.push(
+          ...(data.vouchers as any[]).map((v: any) => ({
+            code: String(v.code),
+            // kalau API balikin amount pakai itu; kalau tidak, fallback ke amount request (r.amount)
+            amount: Number(v.amount ?? r.amount ?? 0),
+          }))
+        );
       }
       setGenerated(out);
       setFlash({kind:'success', text:`Sukses membuat ${out.length} kode.`});
