@@ -106,6 +106,14 @@ export default function MembersPage(){
   // tambahkan helper dekat helper lain:
   function shortK(n:number){ return `${Math.round(n/1000)}k`; }
 
+  function copyAsGrid(codes: { code: string }[], cols = 6) {
+    const rows: string[] = [];
+    for (let i = 0; i < codes.length; i += cols) {
+      rows.push(codes.slice(i, i + cols).map(g => g.code).join('\t')); // kolom dipisah TAB
+    }
+    return rows.join('\n'); // baris dipisah NEWLINE
+  }
+
   // ====== NOMINAL DROPDOWN (EXACT ONLY, kosong saat belum ketik) ======
   const nomParsed = parseAmountInput(nominalSearch);
   const nominalOptions = useMemo(()=>{
@@ -379,8 +387,9 @@ export default function MembersPage(){
               {/* Copy tetap hanya kode tanpa nominal */}
               <button
                 className="btn"
-                onClick={()=>navigator.clipboard.writeText(generated.map(g=>g.code).join('\n'))}
+                onClick={() => navigator.clipboard.writeText(copyAsGrid(generated, 6))}
                 style={{margin:'8px 0'}}
+                title="Salin sebagai grid 6 kolom (tab-delimited)"
               >
                 Copy Semua
               </button>
