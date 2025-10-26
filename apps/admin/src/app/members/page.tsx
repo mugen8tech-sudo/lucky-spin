@@ -384,21 +384,21 @@ export default function MembersPage(){
             <div style={{marginTop:16}}>
               <h3>Hasil ({generated.length} kode)</h3>
 
-              {/* Copy tetap hanya kode tanpa nominal */}
+              {/* Copy tetap grid 6 kolom: tab (\t) untuk kolom, newline (\n) untuk baris */}
               <button
                 className="btn"
-                onClick={() => navigator.clipboard.writeText(copyAsGrid(generated, 6))}
+                onClick={()=>navigator.clipboard.writeText(copyAsGrid(generated, 6))}
                 style={{margin:'8px 0'}}
                 title="Salin sebagai grid 6 kolom (tab-delimited)"
               >
                 Copy Semua
               </button>
 
-              {/* Grid 6 kolom, tiap item: CODE (15k) */}
               <div className="codegrid">
                 {generated.map((g,idx)=>(
-                  <div key={idx} className="codeitem">
-                    {g.code} <small>({shortK(g.amount)})</small>
+                  <div key={idx} className="codeitem" title={`${g.code} (${shortK(g.amount)})`}>
+                    <span className="code">{g.code}</span>
+                    <span className="amt">{shortK(g.amount)}</span>
                   </div>
                 ))}
               </div>
