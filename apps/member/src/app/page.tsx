@@ -58,30 +58,30 @@ export default function Page() {
     setSegments(wheel.segments);
     setSpinMs(wheel.spinMs);
 
-    // hitung rotasi supaya segmen targetIndex berada di atas (di bawah pointer)
     const N = wheel.segments.length;
     const step = 360 / N;
-    const centerDeg = wheel.targetIndex * step + step/2; // 0° di atas (karena Wheel path start di atas)
-    const turns = 6 + Math.floor(Math.random() * 2);     // 6–7 putaran
-    // putar *searah jarum jam*, sehingga target center jatuh tepat di atas → kita rotasi ke (360 - centerDeg)
-    const final = turns*360 + (360 - centerDeg);
+    const centerDeg = wheel.targetIndex * step + step / 2;     // pusat segmen target (0° = atas)
+    const turns = 6 + Math.floor(Math.random() * 2);           // 6–7 putaran
 
     setSpinning(true);
-    // reset transition lalu apply rotasi baru agar animasi selalu berjalan
-    requestAnimationFrame(()=>{
-      setRotation(prev => prev % 360);
-      requestAnimationFrame(()=>{
-        setRotation(final);
-      });
-    });
 
-    // selesai spin → tampilkan hadiah + confetti
-    window.setTimeout(()=>{
-      setSpinning(false);
-      setPrize(amount);
-      makeConfetti();
-    }, wheel.spinMs + 120); // + sedikit buffer
-  }
+    // Hitung final RELATIF terhadap rotasi saat ini supaya selalu panjang
+    setRotation(prev => {
+      const start = prev;                                      // derajat sekarang (bisa > 360)
+      const cur = ((start % 360) + 360) % 360;                 // normalisasi ke 0..359
+      const targetAngle = (360 - centerDeg + 360) % 360;       // posisi yang harus di atas (di bawah pointer)
+      const diffToTarget = (targetAngle - cur + 360) % 360;    // selisih dari posisi sekarang ke target
+      const final = start + turns * 360 + diffToTarget;        // jamin minimal 6 putaran
+
+      // Selesai spin → kasih hadiah
+      window.setTimeout(() => {
+        setSpinning(false);
+        setPrize(amount);
+        makeConfetti();
+      }, wheel.spinMs + 120);
+
+      return final;
+    });
 
   function makeConfetti(){
     const colors = ['#fde047','#60a5fa','#34d399','#fb7185','#c084fc','#fbbf24','#2dd4bf'];
