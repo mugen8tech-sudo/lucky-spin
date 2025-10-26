@@ -61,8 +61,8 @@ export async function POST(req: Request) {
     const wheel = await buildWheelConfig(amount);
 
     return NextResponse.json({ ok: true, amount, wheel }, { status: 200 });
-  } catch (e) {
+  } catch (e: any) {
     console.error('claim error', e);
-    return NextResponse.json({ ok: false, reason: 'SERVER_ERROR' }, { status: 500 });
+    return NextResponse.json({ ok: false, reason: 'SERVER_ERROR', error: e?.message }, { status: 500 });
   }
 }
