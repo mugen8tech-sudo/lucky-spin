@@ -62,7 +62,11 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true, amount, wheel }, { status: 200 });
   } catch (e: any) {
+    // tampilkan error asli agar mudah diagnosa
     console.error('claim error', e);
-    return NextResponse.json({ ok: false, reason: 'SERVER_ERROR', error: e?.message }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, reason: 'SERVER_ERROR', detail: e?.message || String(e) },
+      { status: 500 }
+    );
   }
 }
