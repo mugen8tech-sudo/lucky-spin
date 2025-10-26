@@ -55,9 +55,10 @@ export default function MembersPage(){
   // refs
   const memberInputRef = useRef<HTMLInputElement>(null);
   const nominalInputRef = useRef<HTMLInputElement>(null);
-  const generateBtnRef = useRef<HTMLButtonElement>(null);
+  const memberWrapRef = useRef<HTMLDivElement>(null);
+  const nominalWrapRef = useRef<HTMLDivElement>(null);
 
-  // load data
+  // load data + default masa berlaku
   useEffect(()=> {
     if(!ready || !key) return;
     const controller = new AbortController();
@@ -68,23 +69,29 @@ export default function MembersPage(){
       .finally(()=> setLoadingMembers(false));
     fetch('/api/admin/denominations', { headers })
       .then(r=>r.json()).then(d=> { if(d?.ok) setDenoms(d.amounts as number[]); });
-    // default expires +14 hari
     const d = new Date(); d.setDate(d.getDate()+14);
     setExpiresAt(toLocalDatetimeInputValue(d));
     return ()=> controller.abort();
   }, [ready, key]);
 
+  // tutup dropdown saat klik di luar
+  useEffect(()=>{
+    function onDocDown(ev: MouseEvent){
+      const t = ev.target as Node;
+      if (memberWrapRef.current && !memberWrapRef.current.contains(t)) setMemberOpen(false);
+      if (nominalWrapRef.current && !nominalWrapRef.current.contains(t)) setNomOpen(false);
+    }
+    document.addEventListener('mousedown', onDocDown);
+    return ()=> document.removeEventListener('mousedown', onDocDown);
+  }, []);
+
   const canGenerate = useMemo(()=> selMember && rows.every(r => r.amount>0 && r.count>0) && rows.length>0, [selMember, rows]);
 
-  // ====== MEMBER DROPDOWN (exact) ======
+  // ====== MEMBER DROPDOWN (EXACT ONLY, kosong saat belum ketik) ======
   const memberOptions = useMemo(()=>{
     const q = norm(memberSearch);
-    if (!q) return members.slice(0, 8);
-    // kalau exact ada → tampilkan hanya exact di paling atas
-    const exact = members.filter(m => norm(m.full_name) === q);
-    if (exact.length) return exact;
-    // kalau belum exact → tampilkan prefix agar terasa ada saran
-    return members.filter(m => norm(m.full_name).startsWith(q)).slice(0, 8);
+    if (!q) return []; // kosong saat pertama dibuka / belum ketik
+    return members.filter(m => norm(m.full_name) === q).slice(0, 20); // exact only
   }, [members, memberSearch]);
 
   function selectMemberByIdx(idx:number){
@@ -96,17 +103,12 @@ export default function MembersPage(){
     setTimeout(()=> nominalInputRef.current?.focus(), 0);
   }
 
-  // ====== NOMINAL DROPDOWN (exact) ======
+  // ====== NOMINAL DROPDOWN (EXACT ONLY, kosong saat belum ketik) ======
   const nomParsed = parseAmountInput(nominalSearch);
   const nominalOptions = useMemo(()=>{
-    // urut besar -> kecil
-    const sorted = [...denoms].sort((a,b)=> b-a);
-    if (!nomParsed) return sorted;
-    // “exact” tampilkan hanya yang tepat
-    if (denoms.includes(nomParsed)) return [nomParsed];
-    // kalau belum exact, tampilkan yang prefix match (mis. 1 -> 10000, 15000, 100000)
-    const q = (nominalSearch || '').replace(/[^\d]/g,'');
-    return sorted.filter(a => String(a).startsWith(q));
+    if (!nominalSearch.trim()) return []; // kosong saat belum ketik
+    if (nomParsed && denoms.includes(nomParsed)) return [nomParsed]; // exact only
+    return []; // tidak menampilkan daftar jika belum exact (hindari 500k auto-terpilih)
   }, [denoms, nominalSearch, nomParsed]);
 
   function addNominal(amount:number){
@@ -120,17 +122,26 @@ export default function MembersPage(){
       return [...prev, { amount, count: 1 }];
     });
     setNominalSearch('');
-    setNomOpen(true);
+    setNomOpen(false);
     setNomHL(0);
     setTimeout(()=> nominalInputRef.current?.focus(), 0);
     setFlash(null);
   }
 
-  function removeChip(amount:number){
-    setRows(prev => prev.filter(r=> r.amount !== amount));
+  // klik "x" → decrement 1; jika count=1, chip hilang
+  function decChip(amount:number){
+    setRows(prev=>{
+      const i = prev.findIndex(r=>r.amount===amount);
+      if (i === -1) return prev;
+      const next = [...prev];
+      const r = next[i];
+      if (r.count <= 1) return next.filter((_,idx)=>idx!==i);
+      next[i] = {...r, count: r.count - 1};
+      return next;
+    });
   }
 
-  // === Add member manual (tetap ada) ===
+  // add member manual (tetap ada)
   async function addMember(e: React.FormEvent){
     e.preventDefault();
     if(!memForm.fullName.trim()) return;
@@ -216,15 +227,19 @@ export default function MembersPage(){
         <div className="card">
           <h2>Generate Voucher</h2>
 
-          {/* Cari Member - dropdown */}
+          {/* Cari Member - dropdown (kosong saat belum ketik) */}
           <div style={{marginTop:8}}>
             <label>Cari Member (exact, satu kata)</label>
-            <div className="dropdown" onKeyDown={(e)=>{
-              if (e.key==='ArrowDown'){ e.preventDefault(); setMemberOpen(true); setMemberHL(i=> Math.min((memberOptions.length-1), i+1)); }
-              if (e.key==='ArrowUp'){ e.preventDefault(); setMemberOpen(true); setMemberHL(i=> Math.max(0, i-1)); }
-              if (e.key==='Enter'){ e.preventDefault(); selectMemberByIdx(memberHL); }
-              if (e.key==='Escape'){ setMemberOpen(false); }
-            }}>
+            <div
+              ref={memberWrapRef}
+              className="dropdown"
+              onKeyDown={(e)=>{
+                if (e.key==='ArrowDown'){ e.preventDefault(); setMemberOpen(true); setMemberHL(i=> Math.min((memberOptions.length-1), i+1)); }
+                if (e.key==='ArrowUp'){ e.preventDefault(); setMemberOpen(true); setMemberHL(i=> Math.max(0, i-1)); }
+                if (e.key==='Enter'){ e.preventDefault(); if(memberOptions.length>0) selectMemberByIdx(memberHL); }
+                if (e.key==='Escape'){ setMemberOpen(false); }
+              }}
+            >
               <input
                 ref={memberInputRef}
                 className="input"
@@ -234,20 +249,23 @@ export default function MembersPage(){
                 onChange={e=>{ setMemberSearch(e.target.value); setMemberOpen(true); setMemberHL(0); }}
               />
               {memberOpen && (
-                <div className="dropdown-menu" onMouseLeave={()=>setMemberHL(-1)}>
-                  {memberOptions.length===0
-                    ? <div className="dropdown-empty">Tidak ada hasil</div>
-                    : memberOptions.map((m,idx)=>(
-                        <div
-                          key={m.id}
-                          className="dropdown-item"
-                          aria-selected={idx===memberHL}
-                          onMouseEnter={()=>setMemberHL(idx)}
-                          onMouseDown={(e)=>{ e.preventDefault(); selectMemberByIdx(idx); }}
-                        >
-                          {m.full_name} {m.email ? <span style={{opacity:.6}}>— {m.email}</span> : null}
-                        </div>
-                      ))
+                <div className="dropdown-menu">
+                  {memberSearch.trim()===''
+                    ? <div className="dropdown-empty">Ketik untuk mencari</div>
+                    : (memberOptions.length===0
+                        ? <div className="dropdown-empty">Tidak ada hasil</div>
+                        : memberOptions.map((m,idx)=>(
+                            <div
+                              key={m.id}
+                              className="dropdown-item"
+                              aria-selected={idx===memberHL}
+                              onMouseEnter={()=>setMemberHL(idx)}
+                              onMouseDown={(e)=>{ e.preventDefault(); selectMemberByIdx(idx); }}
+                            >
+                              {m.full_name} {m.email ? <span style={{opacity:.6}}>— {m.email}</span> : null}
+                            </div>
+                          ))
+                      )
                   }
                 </div>
               )}
@@ -255,21 +273,24 @@ export default function MembersPage(){
             {selMember && <div style={{marginTop:6, opacity:.85}}>Dipilih: <strong>{memberSearch}</strong></div>}
           </div>
 
-          {/* Nominal quick add - dropdown */}
+          {/* Nominal quick add - dropdown (kosong saat belum ketik) */}
           <div style={{marginTop:14}}>
             <h3 style={{margin:'6px 0'}}>Nominal cepat (Enter menambah 1 kode)</h3>
-            <div className="dropdown" onKeyDown={(e)=>{
-              if (e.key==='ArrowDown'){ e.preventDefault(); setNomOpen(true); setNomHL(i=> Math.min((nominalOptions.length-1), i+1)); }
-              if (e.key==='ArrowUp'){ e.preventDefault(); setNomOpen(true); setNomHL(i=> Math.max(0, i-1)); }
-              if (e.key==='Enter'){ e.preventDefault(); const pick = nominalOptions[nomHL]; if (pick!=null) addNominal(pick); }
-              if (e.key==='Escape'){ setNomOpen(false); }
-              if (e.key==='Backspace' && nominalSearch==='' && rows.length>0){
-                // backspace saat kosong -> kurangi 1 dari chip terakhir (feel keyboardy)
-                const last = rows[rows.length-1]; 
-                if (last.count>1) setRows(prev => prev.map(r => r.amount===last.amount ? {...r, count:r.count-1} : r));
-                else removeChip(last.amount);
-              }
-            }}>
+            <div
+              ref={nominalWrapRef}
+              className="dropdown"
+              onKeyDown={(e)=>{
+                if (e.key==='ArrowDown'){ e.preventDefault(); setNomOpen(true); setNomHL(i=> Math.min((nominalOptions.length-1), i+1)); }
+                if (e.key==='ArrowUp'){ e.preventDefault(); setNomOpen(true); setNomHL(i=> Math.max(0, i-1)); }
+                if (e.key==='Enter'){ e.preventDefault(); if (nominalOptions.length>0) addNominal(nominalOptions[nomHL]); }
+                if (e.key==='Escape'){ setNomOpen(false); }
+                if (e.key==='Backspace' && nominalSearch==='' && rows.length>0){
+                  const last = rows[rows.length-1];
+                  if (last.count>1) setRows(prev => prev.map(r => r.amount===last.amount ? {...r, count:r.count-1} : r));
+                  else setRows(prev => prev.slice(0,-1));
+                }
+              }}
+            >
               <input
                 ref={nominalInputRef}
                 className="input"
@@ -280,24 +301,37 @@ export default function MembersPage(){
                 disabled={!selMember}
               />
               {nomOpen && selMember && (
-                <div className="dropdown-menu" onMouseLeave={()=>setNomHL(-1)}>
-                  {nominalOptions.length===0
-                    ? <div className="dropdown-empty">Nominal tidak ditemukan</div>
-                    : nominalOptions.map((a,idx)=>(
-                        <div
-                          key={a}
-                          className="dropdown-item"
-                          aria-selected={idx===nomHL}
-                          onMouseEnter={()=>setNomHL(idx)}
-                          onMouseDown={(e)=>{ e.preventDefault(); addNominal(a); }}
-                        >
-                          {fmt(a)}
-                        </div>
-                      ))
+                <div className="dropdown-menu">
+                  {nominalSearch.trim()===''
+                    ? <div className="dropdown-empty">Ketik nominal untuk mencari</div>
+                    : (nominalOptions.length===0
+                        ? <div className="dropdown-empty">Nominal tidak ditemukan</div>
+                        : nominalOptions.map((a,idx)=>(
+                            <div
+                              key={a}
+                              className="dropdown-item"
+                              aria-selected={idx===nomHL}
+                              onMouseEnter={()=>setNomHL(idx)}
+                              onMouseDown={(e)=>{ e.preventDefault(); addNominal(a); }}
+                            >
+                              {fmt(a)}
+                            </div>
+                          ))
+                      )
                   }
                 </div>
               )}
             </div>
+
+            {/* Generate: PERSIS di bawah kolom nominal cepat */}
+            <button
+              className="btn btn-primary"
+              disabled={!canGenerate || genLoading}
+              onClick={generate}
+              style={{marginTop:10}}
+            >
+              {genLoading ? 'Memproses…' : `Generate (${rows.reduce((s,r)=>s+r.count,0)} kode)`}
+            </button>
 
             {/* Chips ringkasan */}
             {rows.length>0 && (
@@ -311,9 +345,10 @@ export default function MembersPage(){
                       <button
                         type="button"
                         className="chip-remove"
-                        aria-label={`Hapus ${fmt(r.amount)}`}
-                        onClick={()=>removeChip(r.amount)}
-                        title="Hapus"
+                        aria-label={`Kurangi ${fmt(r.amount)} sebanyak 1`}
+                        onClick={()=>decChip(r.amount)}
+                        title="Kurangi 1"
+                        tabIndex={-1}
                       >×</button>
                     </span>
                   ))}
@@ -325,17 +360,6 @@ export default function MembersPage(){
             <label style={{display:'block', marginTop:12}}>Masa Berlaku (default +14 hari)
               <input className="input" type="datetime-local" value={expiresAt} onChange={e=>setExpiresAt(e.target.value)} style={{marginTop:4}} />
             </label>
-
-            {/* Generate */}
-            <button
-              ref={generateBtnRef}
-              className="btn btn-primary"
-              disabled={!canGenerate || genLoading}
-              onClick={generate}
-              style={{marginTop:12}}
-            >
-              {genLoading ? 'Memproses…' : `Generate (${rows.reduce((s,r)=>s+r.count,0)} kode)`}
-            </button>
           </div>
 
           {/* Hasil */}
