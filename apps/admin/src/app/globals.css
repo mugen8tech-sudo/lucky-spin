@@ -88,3 +88,18 @@ a:hover { text-decoration: underline; }
 }
 .chip .chip-remove:hover { background:#1f2937; }
 
+/* --- Grid hasil (6 kolom) --- */
+.codegrid {
+  display: grid;
+  grid-template-columns: repeat(6, max-content);
+  gap: 8px 12px;
+}
+.codeitem {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  background: #0b1323;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  white-space: nowrap;
+}
+.codeitem small { opacity: .75; margin-left: 6px; }
