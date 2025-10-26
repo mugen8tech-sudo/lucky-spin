@@ -88,18 +88,20 @@ a:hover { text-decoration: underline; }
 }
 .chip .chip-remove:hover { background:#1f2937; }
 
-/* --- Grid hasil (6 kolom) --- */
+/* --- Grid hasil (6 kolom rapi) --- */
 .codegrid {
   display: grid;
-  grid-template-columns: repeat(6, max-content);
+  grid-template-columns: repeat(6, minmax(0, 1fr)); /* 6 kolom sama lebar */
   gap: 8px 12px;
 }
+
 .codeitem {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
   font-family: ui-monospace, Menlo, Consolas, monospace;
   background: #0b1323;
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 6px 8px;
+  padding: 6px 10px;
   white-space: nowrap;
 }
-.codeitem small { opacity: .75; margin-left: 6px; }
+.codeitem small { opacity: .75; }
