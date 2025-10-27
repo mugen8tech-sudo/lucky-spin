@@ -116,6 +116,7 @@ export default function Wheel({
                     textAnchor="middle"
                     dominantBaseline="middle"
                     alignmentBaseline="middle"
+                    transform={`rotate(${p.rotate + 90} ${p.tx} ${p.ty})`}
                   >
                     {p.label}
                   </text>
