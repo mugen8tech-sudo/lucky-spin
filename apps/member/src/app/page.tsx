@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Wheel from '../components/Wheel';
 
 type ClaimOk = {
@@ -15,6 +15,8 @@ type ClaimErr = {
 };
 type ClaimResp = ClaimOk | ClaimErr;
 
+const CONTACT_URL = process.env.NEXT_PUBLIC_CONTACT_URL || '#';
+
 export default function Page() {
   // UI state
   const [code, setCode] = useState('');
@@ -26,9 +28,22 @@ export default function Page() {
   const [spinMs, setSpinMs] = useState(6000);
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
+
+  // Result modal
   const [prize, setPrize] = useState<number | null>(null);
+  const showResult = prize != null;
 
   const disabled = useMemo(() => spinning || !code.trim(), [spinning, code]);
+
+  // Lock scroll saat panel atau modal hasil tampil (nyaman di mobile)
+  useEffect(() => {
+    const lock = showPanel || showResult;
+    const prev = document.body.style.overflow;
+    if (lock) document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [showPanel, showResult]);
 
   async function handleSpin() {
     if (disabled) return;
@@ -75,14 +90,14 @@ export default function Page() {
 
     const N = wheel.segments.length;
     const step = 360 / Math.max(N, 1);
-    const centerDeg = wheel.targetIndex * step + step / 2; // segmen target tepat di atas (di bawah pointer)
+    const centerDeg = wheel.targetIndex * step + step / 2; // segmen target tepat di atas (pointer)
     const turns = 6 + Math.floor(Math.random() * 2); // 6–7 putaran
     const final = turns * 360 + (360 - centerDeg);
 
     setShowPanel(false);
     setSpinning(true);
 
-    // reset lalu jalankan animasi rotasi
+    // reset → animasi
     requestAnimationFrame(() => {
       setRotation(prev => prev % 360);
       requestAnimationFrame(() => {
@@ -90,7 +105,7 @@ export default function Page() {
       });
     });
 
-    // selesai spin → tampilkan hasil
+    // selesai spin → munculkan modal hasil
     window.setTimeout(() => {
       setSpinning(false);
       setPrize(amount);
@@ -100,14 +115,7 @@ export default function Page() {
   function LightningIcon(props: { size?: number | string }) {
     const size = props.size ?? 'min(120px, 22vw)';
     return (
-      <svg
-        role="img"
-        aria-label="Buka input kode & putar"
-        width={size}
-        height={size}
-        viewBox="0 0 256 256"
-        style={{ display: 'block' }}
-      >
+      <svg role="img" aria-label="Buka input kode & putar" width={size} height={size} viewBox="0 0 256 256" style={{ display: 'block' }}>
         <defs>
           <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stopColor="#7dd3fc" />
@@ -121,13 +129,7 @@ export default function Page() {
             </feMerge>
           </filter>
         </defs>
-        {/* kilat */}
-        <path
-          d="M156 16l-58 92h42l-32 116 90-132h-44l2-76z"
-          fill="url(#g)"
-          filter="url(#glow)"
-        />
-        {/* percikan */}
+        <path d="M156 16l-58 92h42l-32 116 90-132h-44l2-76z" fill="url(#g)" filter="url(#glow)" />
         <g stroke="#60a5fa" strokeWidth="4" strokeLinecap="round" opacity=".9">
           <path d="M192 36c12 4 18 10 26 18" />
           <path d="M58 70c-10 4-16 9-22 16" />
@@ -140,7 +142,7 @@ export default function Page() {
   // Konten pusat (di hub)
   const centerContent = (
     <div className="center-ui">
-      {!showPanel && prize == null && (
+      {!showPanel && !showResult && (
         <button
           className="cta-icon"
           onClick={() => setShowPanel(true)}
@@ -152,7 +154,7 @@ export default function Page() {
         </button>
       )}
 
-      {showPanel && (
+      {showPanel && !showResult && (
         <div className="panel">
           {msg && msg.kind === 'error' && <div className="alert alert-error">{msg.text}</div>}
           <input
@@ -171,35 +173,32 @@ export default function Page() {
           </button>
         </div>
       )}
-
-      {prize != null && !showPanel && (
-        <div className="result-badge">
-          <div>Selamat!</div>
-          <strong>
-            {new Intl.NumberFormat('id-ID', {
-              style: 'currency',
-              currency: 'IDR',
-              maximumFractionDigits: 0
-            }).format(prize)}
-          </strong>
-          <button className="btn" onClick={() => setPrize(null)}>
-            Oke
-          </button>
-        </div>
-      )}
     </div>
   );
 
   return (
     <main className="screen">
-      <Wheel
-        segments={segments}
-        rotationDeg={rotation}
-        spinning={spinning}
-        spinMs={spinMs}
-      >
+      <Wheel segments={segments} rotationDeg={rotation} spinning={spinning} spinMs={spinMs}>
         {centerContent}
       </Wheel>
+
+      {/* MODAL HASIL FULL-SCREEN */}
+      {showResult && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" onClick={() => setPrize(null)}>
+          <div className="modal-card" onClick={e => e.stopPropagation()}>
+            <div className="modal-title">Selamat!</div>
+            <div className="modal-amount">
+              {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(prize!)}
+            </div>
+            <div className="modal-actions">
+              <a className="btn btn-primary" href={CONTACT_URL} target="_blank" rel="noopener noreferrer">
+                Hubungi Kami
+              </a>
+              <button className="btn" onClick={() => setPrize(null)}>Oke</button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
