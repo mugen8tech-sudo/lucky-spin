@@ -15,9 +15,11 @@ type Wedge = {
   d: string;
   fill: string;
   label: string;
-  rotate: number;
+  rotate: number;   // (tetap dipakai untuk highlight arc)
   edgeD: string;
   idx: number;
+  tx: number;       // NEW: posisi teks (x)
+  ty: number;       // NEW: posisi teks (y)
 };
 
 export default function Wheel({
@@ -55,6 +57,11 @@ export default function Wheel({
       const rotate = i * step + step / 2;
       const edgeD = `M ${x1} ${y1} A ${R + 3} ${R + 3} 0 ${largeArc} 1 ${x2} ${y2}`;
 
+      // NEW: posisi teks (horizontal, tanpa rotate)
+      const theta = ((i * step + step / 2) - 90) * Math.PI / 180;
+      const tx = cx + textR * Math.cos(theta);
+      const ty = cy + textR * Math.sin(theta);
+
       arr.push({
         d,
         fill: colors[i],
@@ -62,6 +69,7 @@ export default function Wheel({
         rotate,
         edgeD,
         idx: i,
+        tx, ty,
       });
     }
     return arr;
@@ -102,13 +110,12 @@ export default function Wheel({
                   )}
 
                   <text
-                    x="250"
-                    y="250"
+                    x={p.tx}
+                    y={p.ty}
                     className={isWin ? 'label win-label' : 'label'}
                     textAnchor="middle"
                     dominantBaseline="middle"
                     alignmentBaseline="middle"
-                    transform={`rotate(${p.rotate} 250 250) translate(0 -${textR})`}
                   >
                     {p.label}
                   </text>
