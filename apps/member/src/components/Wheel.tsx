@@ -2,22 +2,22 @@
 import React, { useMemo } from 'react';
 
 type Props = {
-  segments: number[];           // nominal per wedge
-  rotationDeg: number;          // rotasi roda (CSS transform di .wheel-disk)
+  segments: number[];
+  rotationDeg: number;
   spinning: boolean;
   spinMs: number;
-  children?: React.ReactNode;   // konten hub (logo/btn)
+  children?: React.ReactNode;
   hubFill?: string;
-  winningIndex?: number | null; // highlight segmen pemenang
+  winningIndex?: number | null;
 };
 
 type Wedge = {
   idx: number;
-  d: string;          // path sektor
-  edgeD: string;      // arc luar (glow winner)
+  d: string;
+  edgeD: string;
   fill: string;
   label: string;
-  midDegSVG: number;  // bisektor dalam koordinat SVG (0°=kanan, CCW)
+  midDegSVG: number; // 0° = kanan (SVG space), -90° = atas
 };
 
 export default function Wheel({
@@ -32,23 +32,23 @@ export default function Wheel({
   const N = Math.max(segments.length, 1);
   const step = 360 / N;
 
-  // Geometri dasar
+  // ==== Geometri dasar
   const cx = 250, cy = 250;
   const R = 220;                 // radius wedge
-  const textR = R - 44;          // radius penempatan label
+  const LABEL_INSET = 64;        // <- label lebih ke dalam (semula ~44)
+  const textR = R - LABEL_INSET; // radius posisi label
   const outerR = R + 3;          // rim luar
 
-  // Warna sederhana berulang
+  // ==== Warna
   const colors = useMemo(() => {
     const base = ['#22c55e','#0ea5e9','#f59e0b','#ef4444','#a78bfa','#14b8a6','#eab308','#f43f5e'];
     return Array.from({ length: N }, (_, i) => base[i % base.length]);
   }, [N]);
 
-  // Bangun wedge + data label
+  // ==== Build wedges
   const wedges = useMemo<Wedge[]>(() => {
     const arr: Wedge[] = [];
     for (let i = 0; i < N; i++) {
-      // -90° supaya 0° (dunia) = atas → (SVG) kanan
       const start = i * step - 90;
       const end   = (i + 1) * step - 90;
       const mid   = (i + 0.5) * step - 90;
@@ -65,7 +65,7 @@ export default function Wheel({
         d,
         edgeD,
         fill: colors[i],
-        label: formatIDR(segments[i]),
+        label: formatCredit(segments[i]), // <- ganti ke "Credit 10.000"
         midDegSVG: mid,
       });
     }
@@ -92,7 +92,7 @@ export default function Wheel({
           }}
         >
           <svg width="100%" height="100%" viewBox="0 0 500 500" shapeRendering="geometricPrecision">
-            {/* Wedges + separator crisp */}
+            {/* Wedges + separator */}
             <g className="wedge-layer" aria-hidden>
               {wedges.map(w => (
                 <g key={`w-${w.idx}`}>
@@ -117,19 +117,15 @@ export default function Wheel({
               </g>
             )}
 
-            {/* ===== LABEL: lurus, miring persis tangent wedge, auto-flip agar tetap tegak ===== */}
+            {/* LABEL: lurus, miring = tangent wedge, auto-flip agar selalu tegak */}
             <g className="labels-layer">
               {wedges.map(w => {
-                // 1) Rotasi untuk POSISI radial (taruh pada bisektor wedge)
-                const rotateForPosition = w.midDegSVG + 90; // membuat vektor (0,-r) mengarah ke sudut 'mid'
-                // 2) Rotasi untuk ORIENTASI baseline agar tangent terhadap wedge
-                const rotateForTangent = 90; // radial -> tangent
-                // 3) Hitung orientasi absolut di layar untuk memutuskan flip
-                const absOrientation = normDeg(rotationDeg + rotateForPosition + rotateForTangent);
-                const flip = (absOrientation > 90 && absOrientation < 270) ? 180 : 0;
+                const rotateForPosition = w.midDegSVG + 90;             // arah radial ke bisektor
+                const rotateForTangent = 90;                             // radial -> tangent
+                const abs = normDeg(rotationDeg + rotateForPosition + rotateForTangent);
+                const flip = (abs > 90 && abs < 270) ? 180 : 0;
 
-                // Ukuran font berdasar chord agar konsisten banyak label
-                const fontSize = fitFontByChord(w.label, step, textR, 12, 18);
+                const fontSize = fitFontByChord(w.label, step, textR, 12, 20);
 
                 return (
                   <g
@@ -153,7 +149,7 @@ export default function Wheel({
                         stroke: 'rgba(255,255,255,0.80)',
                         strokeWidth: 0.8,
                         fontWeight: 600,
-                        letterSpacing: 0, // jangan tambah spacing agar optik rapi
+                        letterSpacing: 0,
                         textRendering: 'geometricPrecision',
                       }}
                     >
@@ -196,14 +192,15 @@ function polar(cx: number, cy: number, r: number, degSVG: number): [number, numb
   return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
 }
 
-function formatIDR(n: number) {
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
+function formatCredit(n: number) {
+  // "Credit 10.000" (lokal id-ID, tanpa simbol mata uang)
+  return `Credit ${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(n)}`;
 }
 
-function fitFontByChord(label: string, arcDeg: number, r: number, min = 12, max = 18) {
+function fitFontByChord(label: string, arcDeg: number, r: number, min = 12, max = 20) {
   const arcRad = (Math.PI * arcDeg) / 180;
   const chord = 2 * r * Math.sin(arcRad / 2);
-  const perChar = 0.62; // perkiraan lebar rata-rata per karakter = 0.62 * fontSize
+  const perChar = 0.62; // estimasi lebar karakter = 0.62 * fontSize
   const est = (chord * 0.88) / (Math.max(4, label.length) * perChar);
   return Math.max(min, Math.min(max, est));
 }
