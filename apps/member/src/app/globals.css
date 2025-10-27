@@ -288,9 +288,9 @@ body {
   fill: #0b1220;
   font-weight: 700;
   font-size: 18px;
+  letter-spacing: 0.2px;
   paint-order: stroke;
   -webkit-text-stroke: 0.6px rgba(255,255,255,0.35);
-  /* penting agar transform CSS pada <text> tidak geser-geser */
   transform-box: fill-box;
   transform-origin: center;
 }
@@ -316,13 +316,13 @@ body {
 /* Pop kecil pada label pemenang */
 .win-label {
   animation: win-pop 260ms ease-out 1;
-  transform-box: fill-box;     /* pastikan origin benar */
+  transform-box: fill-box;
   transform-origin: center;
 }
 @keyframes win-pop {
-  0%   { transform: scale(1); }
-  60%  { transform: scale(1.08); }
-  100% { transform: scale(1.00); }
+  0% { transform: scale(1); }
+  60% { transform: scale(1.08); }
+  100% { transform: scale(1); }
 }
 
 /* Micro-shake pada pointer saat berhenti */
