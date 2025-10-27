@@ -15,11 +15,11 @@ type Wedge = {
   d: string;        // path segmen
   fill: string;     // warna segmen
   label: string;    // teks nominal
-  rotate: number;   // sudut pusat wedge (untuk arc highlight)
+  rotate: number;   // sudut pusat wedge (deg)
   edgeD: string;    // arc tepi luar (untuk rim glow pemenang)
   idx: number;      // index segmen
-  tx: number;       // posisi teks X (tanpa transform tambahan)
-  ty: number;       // posisi teks Y
+  tx: number;       // posisi teks X (legacy, tidak dipakai lagi)
+  ty: number;       // posisi teks Y (legacy)
 };
 
 export default function Wheel({
@@ -45,7 +45,7 @@ export default function Wheel({
     return Array.from({ length: N }, (_, i) => base[i % base.length]);
   }, [N]);
 
-  // Bangun data wedge lengkap + koordinat label
+  // Bangun data wedge lengkap + koordinat/metadata
   const items = useMemo<Wedge[]>(() => {
     const arr: Wedge[] = [];
     for (let i = 0; i < N; i++) {
@@ -57,10 +57,10 @@ export default function Wheel({
       const largeArc = step > 180 ? 1 : 0;
 
       const d = `M ${cx} ${cy} L ${x1} ${y1} A ${R} ${R} 0 ${largeArc} 1 ${x2} ${y2} Z`;
-      const rotate = i * step + step / 2;
+      const rotate = i * step + step / 2; // sudut tengah wedge (deg)
       const edgeD = `M ${x1} ${y1} A ${R + 3} ${R + 3} 0 ${largeArc} 1 ${x2} ${y2}`;
 
-      // Posisi label (tanpa rotate global), nanti diputar pada titiknya
+      // Posisi label (legacy), kini kita pakai transform group agar teks tetap horizontal
       const theta = ((i * step + step / 2) - 90) * Math.PI / 180;
       const tx = cx + textR * Math.cos(theta);
       const ty = cy + textR * Math.sin(theta);
@@ -114,23 +114,34 @@ export default function Wheel({
               </g>
             )}
 
-            {/* LAYER 3: Label (paling atas agar tidak ketiban wedge) */}
+            {/* LAYER 3: Label (paling atas) */}
             <g className="labels-layer">
-              {items.map((p) => (
-                <text
-                  key={`t-${p.idx}`}
-                  x={p.tx}
-                  y={p.ty}
-                  className={winningIndex === p.idx ? 'label win-label' : 'label'}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  alignmentBaseline="middle"
-                  // Miring tangensial terhadap lingkaran pada titik teksnya
-                  transform={`rotate(${p.rotate + 90} ${p.tx} ${p.ty})`}
-                >
-                  {p.label}
-                </text>
-              ))}
+              {items.map((p) => {
+                const fs = fitFont(p.label, step, textR); // auto-fit font berdasarkan chord
+                // Trik transform:
+                // - translate ke pusat (cx,cy)
+                // - rotate ke tengah wedge
+                // - translate ke radius label
+                // - rotate balik agar teks horizontal
+                return (
+                  <g
+                    key={`t-${p.idx}`}
+                    transform={`translate(${cx} ${cy}) rotate(${p.rotate}) translate(0 ${-textR}) rotate(${-p.rotate})`}
+                  >
+                    <text
+                      className={winningIndex === p.idx ? 'label win-label' : 'label'}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      alignmentBaseline="middle"
+                      fontSize={fs}
+                      // sedikit outline supaya kontras di semua warna slice
+                      style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,.55)', strokeWidth: 3 }}
+                    >
+                      {p.label}
+                    </text>
+                  </g>
+                );
+              })}
             </g>
 
             {/* Ring tipis di tepi disk */}
@@ -150,8 +161,18 @@ export default function Wheel({
   );
 }
 
+/* ===== Helpers ===== */
 function formatIDR(n: number) {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
+}
+
+// Auto-fit ukuran font berdasarkan lebar chord pada radius label
+function fitFont(label: string, arcDeg: number, r: number, min = 12, max = 20) {
+  const arcRad = (Math.PI * arcDeg) / 180;
+  const chord = 2 * r * Math.sin(arcRad / 2);       // panjang chord
+  const perChar = 0.6;                               // ~0.6 * fontSize per karakter
+  const est = (chord * 0.9) / (Math.max(4, label.length) * perChar);
+  return Math.max(min, Math.min(max, est));
 }
 
 function isDark(hex: string) {
