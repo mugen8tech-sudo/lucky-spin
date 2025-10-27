@@ -56,7 +56,7 @@ body {
   user-select: none;
 }
 
-/* ====== WHEEL WRAPPER (FIX) */
+/* ====== WHEEL WRAPPER */
 .wheel-frame {
   position: relative;
   width: var(--wheel-size);
@@ -121,7 +121,7 @@ body {
   z-index: 4;
 }
 .center-ui {
-  position: absolute;       /* semula relative */
+  position: absolute;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
@@ -129,13 +129,13 @@ body {
   gap: 8px;
   place-items: center;
   z-index: 5;
-  width: max-content;       /* biar ukurannya mengikuti panel, tidak ngefek ke layout lain */
+  width: max-content;
 }
 
-/* Pointer segitiga kuning (FIX) */
+/* Pointer segitiga kuning */
 .pointer {
   position: absolute;
-  top: -20px;               /* sedikit lebih naik karena arah segitiga dibalik */
+  top: -20px;
   left: 50%;
   transform: translateX(-50%);
   width: 0; height: 0;
@@ -283,18 +283,38 @@ body {
 }
 @keyframes fall { to { transform: translateY(110vh) rotate(520deg); opacity: .95; } }
 
-/* Label default */
-.label {
-  fill: #0b1220;
-  font-weight: 700;
-  font-size: 18px;
-  letter-spacing: 0.2px;
-  paint-order: stroke;
-  -webkit-text-stroke: 0.6px rgba(255,255,255,0.35);
-  transform-box: fill-box;
-  transform-origin: center;
+/* ===== Label roda (rapih & kontras) ===== */
+.label{
+  font-weight: 500;
+  letter-spacing: .2px;
   user-select: none;
   pointer-events: none;
+
+  /* Outline tipis supaya kebaca di semua warna slice */
+  fill: #0f172a;
+  paint-order: stroke fill;
+  stroke: rgba(255,255,255,0.78);
+  stroke-width: .8px;
+
+  text-rendering: geometricPrecision;
+  font-kerning: normal;
+}
+@media (prefers-color-scheme: dark){
+  .label{
+    fill: #0b1220;
+    stroke: rgba(255,255,255,0.85);
+  }
+}
+
+/* Pop kecil pada label pemenang */
+.win-label {
+  font-weight: 600;
+  animation: win-pop 260ms ease-out 1;
+}
+@keyframes win-pop {
+  0% { transform: scale(1); }
+  60% { transform: scale(1.08); }
+  100% { transform: scale(1); }
 }
 
 /* Glow wedge pemenang */
@@ -315,16 +335,6 @@ body {
   opacity: .9;
 }
 
-/* Pop kecil pada label pemenang */
-.win-label {
-  animation: win-pop 260ms ease-out 1;
-}
-@keyframes win-pop {
-  0% { transform: scale(1); }
-  60% { transform: scale(1.08); }
-  100% { transform: scale(1); }
-}
-
 /* Micro-shake pada pointer saat berhenti */
 .pointer.shake {
   animation: pointer-shake 170ms ease-in-out 1;
@@ -336,47 +346,4 @@ body {
   55%  { transform: translateX(-50%) rotate(-5deg); }
   85%  { transform: translateX(-50%) rotate(3deg); }
   100% { transform: translateX(-50%) rotate(0deg); }
-}
-
-/* ===== Wheel labels tidy ===== */
-.wheel-label{
-  font-weight: 700;
-  letter-spacing: .2px;
-  user-select: none;
-  pointer-events: none;
-
-  /* SVG text colors & outline biar kebaca di semua warna slice */
-  fill: #eaeaea;                 /* warna teks */
-  paint-order: stroke fill;
-  stroke: rgba(0,0,0,.55);       /* outline tipis */
-  stroke-width: 3px;
-}
-@media (prefers-color-scheme: light){
-  .wheel-label{
-    fill: #111;
-    stroke: rgba(255,255,255,.85);
-  }
-}
-
-/* ===== Label styling (tipis + kontras cukup) ===== */
-.label{
-  font-weight: 500;                /* tipiskan */
-  fill: #0f172a;                   /* slate-900 untuk light/dark tetap kontras di slice terang */
-  paint-order: stroke fill;        /* outline dulu agar readable */
-  stroke: rgba(255,255,255,0.75);  /* outline ringan */
-  stroke-width: .8px;
-  letter-spacing: .2px;
-  text-rendering: geometricPrecision;
-  font-kerning: normal;
-}
-
-@media (prefers-color-scheme: dark){
-  .label{
-    fill: #0b1220;                 /* sedikit lebih gelap untuk dark bg */
-    stroke: rgba(255,255,255,0.85);
-  }
-}
-
-.win-label{
-  font-weight: 600;                /* sedikit bold untuk pemenang */
 }
