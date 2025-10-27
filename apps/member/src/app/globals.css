@@ -283,13 +283,16 @@ body {
 }
 @keyframes fall { to { transform: translateY(110vh) rotate(520deg); opacity: .95; } }
 
-/* Label default dengan stroke tipis agar terbaca */
+/* Label default */
 .label {
   fill: #0b1220;
   font-weight: 700;
   font-size: 18px;
   paint-order: stroke;
   -webkit-text-stroke: 0.6px rgba(255,255,255,0.35);
+  /* penting agar transform CSS pada <text> tidak geser-geser */
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
 /* Glow wedge pemenang */
@@ -313,6 +316,7 @@ body {
 /* Pop kecil pada label pemenang */
 .win-label {
   animation: win-pop 260ms ease-out 1;
+  transform-box: fill-box;     /* pastikan origin benar */
   transform-origin: center;
 }
 @keyframes win-pop {
