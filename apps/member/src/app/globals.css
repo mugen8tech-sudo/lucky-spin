@@ -357,3 +357,26 @@ body {
     stroke: rgba(255,255,255,.85);
   }
 }
+
+/* ===== Label styling (tipis + kontras cukup) ===== */
+.label{
+  font-weight: 500;                /* tipiskan */
+  fill: #0f172a;                   /* slate-900 untuk light/dark tetap kontras di slice terang */
+  paint-order: stroke fill;        /* outline dulu agar readable */
+  stroke: rgba(255,255,255,0.75);  /* outline ringan */
+  stroke-width: .8px;
+  letter-spacing: .2px;
+  text-rendering: geometricPrecision;
+  font-kerning: normal;
+}
+
+@media (prefers-color-scheme: dark){
+  .label{
+    fill: #0b1220;                 /* sedikit lebih gelap untuk dark bg */
+    stroke: rgba(255,255,255,0.85);
+  }
+}
+
+.win-label{
+  font-weight: 600;                /* sedikit bold untuk pemenang */
+}
