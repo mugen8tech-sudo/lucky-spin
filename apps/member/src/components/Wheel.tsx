@@ -60,6 +60,7 @@ export default function Wheel({
 
       // sudut tengah wedge dengan referensi 0° = atas (agar mudah untuk orientasi label radial)
       const midDeg = (i + 0.5) * step - 90;
+      const normDeg = (d: number) => ((d % 360) + 360) % 360;
 
       arr.push({
         d,
@@ -114,15 +115,21 @@ export default function Wheel({
               </g>
             )}
 
-            {/* LAYER 3: label — kini M I R I N G mengikut radial wedge */}
+            {/* LAYER 3: label (miring ikut wedge + auto-flip agar selalu tegak) */}
             <g className="labels-layer">
               {items.map((p) => {
-                const fs = fitFont(p.label, step, textR, 11, 18); // sedikit lebih kecil biar gak terlihat tebal
+                const fs = fitFont(p.label, step, textR, 11, 18);
+                // Sudut absolut label di viewport = rotasi disk + sudut tengah wedge
+                const abs = normDeg(rotationDeg + p.midDeg);
+                // Jika berada di bawah (90°..270°), balik 180° biar teks tidak terbalik
+                const flip = abs > 90 && abs < 270 ? 180 : 0;
+
                 return (
                   <g
                     key={`t-${p.idx}`}
-                    // rotate(midDeg) => teks menghadap radial (miring mengikuti wedge)
-                    transform={`translate(${cx} ${cy}) rotate(${p.midDeg}) translate(0 ${-textR})`}
+                    // rotate(mid) => miring mengikuti wedge (tangensial),
+                    // translate ke radius label, lalu rotate(flip) jika perlu.
+                    transform={`translate(${cx} ${cy}) rotate(${p.midDeg}) translate(0 ${-textR}) rotate(${flip})`}
                   >
                     <text
                       className={winningIndex === p.idx ? 'label win-label' : 'label'}
@@ -130,8 +137,13 @@ export default function Wheel({
                       dominantBaseline="middle"
                       alignmentBaseline="middle"
                       fontSize={fs}
-                      fontWeight={500}                      // ↓ kurangi ketebalan
-                      style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,.45)', strokeWidth: 1.2 }}
+                      fontWeight={500}                // lebih tipis
+                      style={{
+                        paintOrder: 'stroke',
+                        stroke: 'rgba(0,0,0,.35)',   // outline lebih tipis
+                        strokeWidth: 0.9,
+                        letterSpacing: 0.2,
+                      }}
                     >
                       {p.label}
                     </text>
