@@ -60,7 +60,6 @@ export default function Wheel({
 
       // sudut tengah wedge dengan referensi 0° = atas (agar mudah untuk orientasi label radial)
       const midDeg = (i + 0.5) * step - 90;
-      const normDeg = (d: number) => ((d % 360) + 360) % 360;
 
       arr.push({
         d,
@@ -77,6 +76,8 @@ export default function Wheel({
   // Kontras garis hub
   const hubStroke = isDark(hubFill) ? '#1f2937' : '#e5e7eb';
   const pointerCls = winningIndex != null ? 'pointer shake' : 'pointer';
+
+  const normDeg = (d: number) => ((d % 360) + 360) % 360;
 
   return (
     <div className="wheel-frame">
