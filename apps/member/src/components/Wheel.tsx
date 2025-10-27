@@ -2,22 +2,22 @@
 import React, { useMemo } from 'react';
 
 type Props = {
-  segments: number[];
-  rotationDeg: number;   // angka derajat yang sama dengan transform CSS roda
+  segments: number[];           // nominal per wedge
+  rotationDeg: number;          // rotasi roda (CSS transform di .wheel-disk)
   spinning: boolean;
   spinMs: number;
-  children?: React.ReactNode;
+  children?: React.ReactNode;   // konten hub (logo/btn)
   hubFill?: string;
-  winningIndex?: number | null;
+  winningIndex?: number | null; // highlight segmen pemenang
 };
 
 type Wedge = {
   idx: number;
-  d: string;
-  edgeD: string;
+  d: string;          // path sektor
+  edgeD: string;      // arc luar (glow winner)
   fill: string;
   label: string;
-  midDegSVG: number;   // 0° = kanan (SVG space), -90° = atas
+  midDegSVG: number;  // bisektor dalam koordinat SVG (0°=kanan, CCW)
 };
 
 export default function Wheel({
@@ -32,22 +32,23 @@ export default function Wheel({
   const N = Math.max(segments.length, 1);
   const step = 360 / N;
 
-  // Geometri
+  // Geometri dasar
   const cx = 250, cy = 250;
-  const R = 220;              // radius wedge
-  const textR = R - 44;       // radius label (cincin label)
-  const outerR = R + 3;
+  const R = 220;                 // radius wedge
+  const textR = R - 44;          // radius penempatan label
+  const outerR = R + 3;          // rim luar
 
-  // Warna
+  // Warna sederhana berulang
   const colors = useMemo(() => {
     const base = ['#22c55e','#0ea5e9','#f59e0b','#ef4444','#a78bfa','#14b8a6','#eab308','#f43f5e'];
     return Array.from({ length: N }, (_, i) => base[i % base.length]);
   }, [N]);
 
+  // Bangun wedge + data label
   const wedges = useMemo<Wedge[]>(() => {
     const arr: Wedge[] = [];
     for (let i = 0; i < N; i++) {
-      // Derajat di "SVG space" (0° = kanan). Kita ingin 0° di atas, jadi minus 90°
+      // -90° supaya 0° (dunia) = atas → (SVG) kanan
       const start = i * step - 90;
       const end   = (i + 1) * step - 90;
       const mid   = (i + 0.5) * step - 90;
@@ -90,13 +91,8 @@ export default function Wheel({
             transition: spinning ? `transform ${spinMs}ms cubic-bezier(0.12, 0.01, 0, 1)` : 'none',
           }}
         >
-          <svg
-            width="100%"
-            height="100%"
-            viewBox="0 0 500 500"
-            shapeRendering="geometricPrecision"
-          >
-            {/* Wedges */}
+          <svg width="100%" height="100%" viewBox="0 0 500 500" shapeRendering="geometricPrecision">
+            {/* Wedges + separator crisp */}
             <g className="wedge-layer" aria-hidden>
               {wedges.map(w => (
                 <g key={`w-${w.idx}`}>
@@ -121,34 +117,44 @@ export default function Wheel({
               </g>
             )}
 
-            {/* LABEL LURUS — kemiringan mengikuti wedge (tangent) + auto-flip */}
+            {/* ===== LABEL: lurus, miring persis tangent wedge, auto-flip agar tetap tegak ===== */}
             <g className="labels-layer">
               {wedges.map(w => {
-                const tangent = w.midDegSVG + 90;             // sudut baseline label (tangent)
-                const abs = normDeg(rotationDeg + tangent);    // posisi absolut di layar
-                const flip = abs > 90 && abs < 270 ? 180 : 0;  // balik agar teks selalu tegak
-                const rot = tangent + flip;
+                // 1) Rotasi untuk POSISI radial (taruh pada bisektor wedge)
+                const rotateForPosition = w.midDegSVG + 90; // membuat vektor (0,-r) mengarah ke sudut 'mid'
+                // 2) Rotasi untuk ORIENTASI baseline agar tangent terhadap wedge
+                const rotateForTangent = 90; // radial -> tangent
+                // 3) Hitung orientasi absolut di layar untuk memutuskan flip
+                const absOrientation = normDeg(rotationDeg + rotateForPosition + rotateForTangent);
+                const flip = (absOrientation > 90 && absOrientation < 270) ? 180 : 0;
+
+                // Ukuran font berdasar chord agar konsisten banyak label
+                const fontSize = fitFontByChord(w.label, step, textR, 12, 18);
 
                 return (
                   <g
                     key={`t-${w.idx}`}
-                    transform={`translate(${cx} ${cy}) rotate(${rot}) translate(0 ${-textR})`}
+                    transform={
+                      `translate(${cx} ${cy}) ` +
+                      `rotate(${rotateForPosition}) ` +
+                      `translate(0 ${-textR}) ` +
+                      `rotate(${rotateForTangent + flip})`
+                    }
                   >
                     <text
                       className={winningIndex === w.idx ? 'label win-label' : 'label'}
                       textAnchor="middle"
                       dominantBaseline="middle"
-                      fontSize={16}
-                      // baseline correction supaya benar-benar center
                       dy="0.35em"
+                      fontSize={fontSize}
                       style={{
                         fill: '#0f172a',
                         paintOrder: 'stroke',
-                        stroke: 'rgba(255,255,255,0.8)',
+                        stroke: 'rgba(255,255,255,0.80)',
                         strokeWidth: 0.8,
                         fontWeight: 600,
+                        letterSpacing: 0, // jangan tambah spacing agar optik rapi
                         textRendering: 'geometricPrecision',
-                        letterSpacing: 0, // jangan pakai spacing biar optik rapi
                       }}
                     >
                       {w.label}
@@ -158,7 +164,7 @@ export default function Wheel({
               })}
             </g>
 
-            {/* Rim */}
+            {/* Rim luar */}
             <circle
               cx={cx}
               cy={cy}
@@ -171,13 +177,10 @@ export default function Wheel({
           </svg>
         </div>
 
-        {/* Hub (tetap sama) */}
+        {/* Hub (tetap) */}
         <div
           className="hub"
-          style={{
-            backgroundColor: hubFill,
-            boxShadow: `inset 0 0 0 5px ${hubStroke}, 0 6px 18px rgba(0,0,0,.45)`,
-          }}
+          style={{ backgroundColor: hubFill, boxShadow: `inset 0 0 0 5px ${hubStroke}, 0 6px 18px rgba(0,0,0,.45)` }}
         >
           <div className="center-ui">{children}</div>
         </div>
@@ -195,6 +198,14 @@ function polar(cx: number, cy: number, r: number, degSVG: number): [number, numb
 
 function formatIDR(n: number) {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
+}
+
+function fitFontByChord(label: string, arcDeg: number, r: number, min = 12, max = 18) {
+  const arcRad = (Math.PI * arcDeg) / 180;
+  const chord = 2 * r * Math.sin(arcRad / 2);
+  const perChar = 0.62; // perkiraan lebar rata-rata per karakter = 0.62 * fontSize
+  const est = (chord * 0.88) / (Math.max(4, label.length) * perChar);
+  return Math.max(min, Math.min(max, est));
 }
 
 function isDark(hex: string) {
