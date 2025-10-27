@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 
 type Props = {
   segments: number[];
-  rotationDeg: number;   // dipakai untuk sync flip label saat roda diputar (CSS transform)
+  rotationDeg: number;   // angka derajat yang sama dengan transform CSS roda
   spinning: boolean;
   spinMs: number;
   children?: React.ReactNode;
@@ -13,15 +13,11 @@ type Props = {
 
 type Wedge = {
   idx: number;
-  startDegSVG: number;   // derajat awal (SVG space) = derajat dunia - 90°
-  endDegSVG: number;     // derajat akhir (SVG space)
-  midDegSVG: number;     // bisektor (SVG space)
+  d: string;
+  edgeD: string;
   fill: string;
   label: string;
-  d: string;             // path sektor
-  edgeD: string;         // arc luar untuk glow
-  labelPath: string;     // arc label (arah normal, sweep=1)
-  labelPathReversed: string; // arc label kebalik (untuk setengah bawah), sweep=0
+  midDegSVG: number;   // 0° = kanan (SVG space), -90° = atas
 };
 
 export default function Wheel({
@@ -36,13 +32,13 @@ export default function Wheel({
   const N = Math.max(segments.length, 1);
   const step = 360 / N;
 
-  // Geometri dasar SVG
+  // Geometri
   const cx = 250, cy = 250;
-  const R = 220;               // radius wedge
-  const textR = R - 44;        // radius label (dekat tepi, tetap aman dari bezel)
-  const outerR = R + 3;        // rim luar
+  const R = 220;              // radius wedge
+  const textR = R - 44;       // radius label (cincin label)
+  const outerR = R + 3;
 
-  // Palet warna
+  // Warna
   const colors = useMemo(() => {
     const base = ['#22c55e','#0ea5e9','#f59e0b','#ef4444','#a78bfa','#14b8a6','#eab308','#f43f5e'];
     return Array.from({ length: N }, (_, i) => base[i % base.length]);
@@ -51,35 +47,25 @@ export default function Wheel({
   const wedges = useMemo<Wedge[]>(() => {
     const arr: Wedge[] = [];
     for (let i = 0; i < N; i++) {
-      // Derajat dunia (0° di atas), lalu konversi ke "SVG space" (0° di kanan) => -90°
-      const startDegSVG = (i * step) - 90;
-      const endDegSVG   = ((i + 1) * step) - 90;
-      const midDegSVG   = ((i + 0.5) * step) - 90;
+      // Derajat di "SVG space" (0° = kanan). Kita ingin 0° di atas, jadi minus 90°
+      const start = i * step - 90;
+      const end   = (i + 1) * step - 90;
+      const mid   = (i + 0.5) * step - 90;
 
-      // titik busur
-      const [x1, y1] = polar(cx, cy, R, startDegSVG);
-      const [x2, y2] = polar(cx, cy, R, endDegSVG);
+      const [x1, y1] = polar(cx, cy, R, start);
+      const [x2, y2] = polar(cx, cy, R, end);
       const largeArc = step > 180 ? 1 : 0;
 
       const d = `M ${cx} ${cy} L ${x1} ${y1} A ${R} ${R} 0 ${largeArc} 1 ${x2} ${y2} Z`;
       const edgeD = `M ${x1} ${y1} A ${outerR} ${outerR} 0 ${largeArc} 1 ${x2} ${y2}`;
 
-      // Arc untuk label (arah normal: sweep=1)
-      const labelPath = describeArc(cx, cy, textR, startDegSVG, endDegSVG, /*sweep=*/1);
-      // Arc kebalik untuk sisi bawah (supaya teks tetap tegak): sweep=0
-      const labelPathReversed = describeArc(cx, cy, textR, endDegSVG, startDegSVG, /*sweep=*/0);
-
       arr.push({
         idx: i,
-        startDegSVG,
-        endDegSVG,
-        midDegSVG,
-        fill: colors[i],
-        label: formatIDR(segments[i]),
         d,
         edgeD,
-        labelPath,
-        labelPathReversed,
+        fill: colors[i],
+        label: formatIDR(segments[i]),
+        midDegSVG: mid,
       });
     }
     return arr;
@@ -110,19 +96,9 @@ export default function Wheel({
             viewBox="0 0 500 500"
             shapeRendering="geometricPrecision"
           >
-            {/* defs untuk semua label arc */}
-            <defs>
-              {wedges.map((w) => (
-                <React.Fragment key={`def-${w.idx}`}>
-                  <path id={`arc-${w.idx}`} d={w.labelPath} fill="none" />
-                  <path id={`arc-r-${w.idx}`} d={w.labelPathReversed} fill="none" />
-                </React.Fragment>
-              ))}
-            </defs>
-
-            {/* Wedges + separator crisp */}
+            {/* Wedges */}
             <g className="wedge-layer" aria-hidden>
-              {wedges.map((w) => (
+              {wedges.map(w => (
                 <g key={`w-${w.idx}`}>
                   <path d={w.d} fill={w.fill} />
                   <path
@@ -145,39 +121,44 @@ export default function Wheel({
               </g>
             )}
 
-            {/* Label mengikuti lengkung wedge + auto-flip di setengah bawah */}
+            {/* LABEL LURUS — kemiringan mengikuti wedge (tangent) + auto-flip */}
             <g className="labels-layer">
-              {wedges.map((w) => {
-                // Sudut tangent dunia = mid + 90 (ingat nilai sudah SVG-space)
-                const tangentWorld = w.midDegSVG + 90;
-                const abs = normDeg(rotationDeg + tangentWorld);
-                const useReversed = abs > 90 && abs < 270; // jika di bawah, pakai path kebalik agar tegak
-                const pathId = useReversed ? `arc-r-${w.idx}` : `arc-${w.idx}`;
-
-                const fs = fitFontArc(w.label, step, textR, 12, 20); // ukuran font berdasar arc length
+              {wedges.map(w => {
+                const tangent = w.midDegSVG + 90;             // sudut baseline label (tangent)
+                const abs = normDeg(rotationDeg + tangent);    // posisi absolut di layar
+                const flip = abs > 90 && abs < 270 ? 180 : 0;  // balik agar teks selalu tegak
+                const rot = tangent + flip;
 
                 return (
-                  <text
+                  <g
                     key={`t-${w.idx}`}
-                    className={winningIndex === w.idx ? 'label win-label' : 'label'}
-                    fontSize={fs}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
+                    transform={`translate(${cx} ${cy}) rotate(${rot}) translate(0 ${-textR})`}
                   >
-                    <textPath
-                      href={`#${pathId}`}
-                      startOffset="50%"
-                      method="align"
-                      spacing="auto"
+                    <text
+                      className={winningIndex === w.idx ? 'label win-label' : 'label'}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fontSize={16}
+                      // baseline correction supaya benar-benar center
+                      dy="0.35em"
+                      style={{
+                        fill: '#0f172a',
+                        paintOrder: 'stroke',
+                        stroke: 'rgba(255,255,255,0.8)',
+                        strokeWidth: 0.8,
+                        fontWeight: 600,
+                        textRendering: 'geometricPrecision',
+                        letterSpacing: 0, // jangan pakai spacing biar optik rapi
+                      }}
                     >
                       {w.label}
-                    </textPath>
-                  </text>
+                    </text>
+                  </g>
                 );
               })}
             </g>
 
-            {/* rim luar */}
+            {/* Rim */}
             <circle
               cx={cx}
               cy={cy}
@@ -190,7 +171,7 @@ export default function Wheel({
           </svg>
         </div>
 
-        {/* Hub */}
+        {/* Hub (tetap sama) */}
         <div
           className="hub"
           style={{
@@ -205,45 +186,15 @@ export default function Wheel({
   );
 }
 
-/* ===== Utilities ===== */
+/* ===== Utils ===== */
 
 function polar(cx: number, cy: number, r: number, degSVG: number): [number, number] {
   const rad = (degSVG * Math.PI) / 180;
   return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
 }
 
-function describeArc(
-  cx: number,
-  cy: number,
-  r: number,
-  startDegSVG: number,
-  endDegSVG: number,
-  sweep: 0 | 1
-) {
-  const [x1, y1] = polar(cx, cy, r, startDegSVG);
-  const [x2, y2] = polar(cx, cy, r, endDegSVG);
-  const delta = normDeg(endDegSVG - startDegSVG);
-  const largeArc = delta > 180 ? 1 : 0;
-  return `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} ${sweep} ${x2} ${y2}`;
-}
-
 function formatIDR(n: number) {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
-}
-
-// Ukur font berdasarkan PANJANG BUSUR (bukan chord) agar konsisten di semua sudut
-function fitFontArc(
-  label: string,
-  arcDeg: number,
-  r: number,
-  min = 12,
-  max = 20
-) {
-  const arcRad = (Math.PI * arcDeg) / 180;
-  const arcLen = r * arcRad;           // panjang busur
-  const perChar = 0.62;                // ~0.62 * fontSize per karakter (estimasi)
-  const est = (arcLen * 0.86) / (Math.max(4, label.length) * perChar);
-  return Math.max(min, Math.min(max, est));
 }
 
 function isDark(hex: string) {
