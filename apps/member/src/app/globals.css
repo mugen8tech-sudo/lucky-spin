@@ -318,8 +318,6 @@ body {
 /* Pop kecil pada label pemenang */
 .win-label {
   animation: win-pop 260ms ease-out 1;
-  transform-box: fill-box;
-  transform-origin: center;
 }
 @keyframes win-pop {
   0% { transform: scale(1); }
