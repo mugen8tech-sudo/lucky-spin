@@ -293,6 +293,8 @@ body {
   -webkit-text-stroke: 0.6px rgba(255,255,255,0.35);
   transform-box: fill-box;
   transform-origin: center;
+  user-select: none;
+  pointer-events: none;
 }
 
 /* Glow wedge pemenang */
