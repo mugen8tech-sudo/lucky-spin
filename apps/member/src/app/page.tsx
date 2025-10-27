@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import RainFX from '../components/RainFX';
 import LightningFX from '../components/LightningFX';
 import Wheel from '../components/Wheel';
 
@@ -137,10 +138,11 @@ export default function Page() {
 
   return (
     <main className="screen">
-      {/* Layer kilat di background */}
+      {/* Background effects */}
       <LightningFX />
+      <RainFX />
 
-      {/* Wheel di atas efek */}
+      {/* Wheel… (tetap sama) */}
       <Wheel
         segments={segments}
         rotationDeg={rotation}
