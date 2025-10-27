@@ -38,15 +38,64 @@ body {
 .alert-error { background: #3f0d0d; color: #fecaca; border: 1px solid #7f1d1d; }
 .alert-success { background: #052e16; color: #bbf7d0; border: 1px solid #14532d; }
 
-/* WHEEL */
-.wheel-frame { position: relative; width: var(--wheel-size); height: var(--wheel-size); margin: 0 auto; display: grid; place-items: center; }
-.wheel { width: 100%; height: 100%; border-radius: 50%; display: grid; place-items: center; will-change: transform; position: relative; }
-.pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0;
-  border-left: 16px solid transparent; border-right: 16px solid transparent; border-bottom: 32px solid #facc15; filter: drop-shadow(0 4px 4px rgba(0,0,0,.4)); z-index: 2; }
-.center-ui { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: grid; gap: 8px; place-items: center; z-index: 3; }
-.cta-icon { border: none; background: transparent; padding: 8px; border-radius: 999px; outline: none; cursor: pointer; }
-.cta-icon:focus-visible { box-shadow: 0 0 0 4px var(--ring); }
-.panel { width: min(320px, 78vw); background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.35); display: grid; gap: 10px; }
+/* ===== Wheel layers ===== */
+.wheel {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  border-radius: 50%;
+}
+
+/* Bezel luar: metal/glossy statis */
+.bezel-outer {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  /* ring gelap + highlight tipis (atas) */
+  background:
+    radial-gradient(120% 120% at 50% 30%, rgba(255,255,255,0.08), transparent 45%) ,
+    radial-gradient(120% 120% at 50% 70%, rgba(255,255,255,0.04), transparent 46%) ,
+    #0b1323;
+  border: 10px solid #0b1323;
+  box-shadow:
+    0 20px 70px rgba(0,0,0,.45),
+    inset 0 0 0 4px rgba(255,255,255,.06),
+    inset 0 0 0 10px #0f172a; /* outer rim */
+}
+
+/* Bezel dalam tipis untuk kedalaman */
+.bezel-inner {
+  position: absolute;
+  inset: 16px; /* ruang untuk disk */
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,.06),
+    inset 0 0 16px rgba(0,0,0,.35);
+}
+
+/* Disk berputar */
+.wheel-disk {
+  position: absolute;
+  inset: 26px; /* lebih kecil dari bezel-inner */
+  border-radius: 50%;
+  overflow: hidden;
+  will-change: transform;
+  background: radial-gradient(140% 100% at 50% -30%, rgba(255,255,255,0.06), transparent 40%);
+}
+
+/* Hub statis di tengah (ikon/tombol di atasnya) */
+.hub {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 132px; height: 132px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  z-index: 4;
+}
+
+.center-ui { position: relative; z-index: 5; }
+
+.pointer { z-index: 6; } /* pastikan di atas semuanya */
 
 /* ===== MODAL HASIL (full screen) ===== */
 .modal-overlay {
