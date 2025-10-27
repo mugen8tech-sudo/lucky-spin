@@ -77,3 +77,12 @@ body {
 /* confetti (jika dipakai) */
 .confetti { position: fixed; top: -10px; width: 8px; height: 14px; opacity: .9; transform: translateY(-10px) rotate(0deg); animation: fall 2400ms linear forwards; }
 @keyframes fall { to { transform: translateY(110vh) rotate(520deg); opacity: .95; } }
+
+/* ukuran ikon hub (menyesuaikan layar) */
+.hub-img {
+  width: min(120px, 22vw);
+  height: auto;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+}
