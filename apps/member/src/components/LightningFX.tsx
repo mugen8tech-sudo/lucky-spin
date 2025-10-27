@@ -1,56 +1,67 @@
 'use client';
 import React, { useEffect, useRef } from 'react';
 
-const MIN_MS = Math.max(300, Number(process.env.NEXT_PUBLIC_LIGHTNING_MIN_MS ?? 1200)); // default 1.2s
-const MAX_MS = Math.max(MIN_MS + 200, Number(process.env.NEXT_PUBLIC_LIGHTNING_MAX_MS ?? 2600)); // default 2.6s
+/** Interval bisa di-tune via ENV (opsional) */
+const MIN_MS = Math.max(250, Number(process.env.NEXT_PUBLIC_LIGHTNING_MIN_MS ?? 900));  // default 0.9s
+const MAX_MS = Math.max(MIN_MS + 150, Number(process.env.NEXT_PUBLIC_LIGHTNING_MAX_MS ?? 1800)); // default 1.8s
 
 export default function LightningFX() {
-  const ref = useRef<HTMLDivElement>(null);
+  const bgRef = useRef<HTMLDivElement>(null);   // layer belakang (kalau nanti mau aktifkan bolt kecil)
+  const topRef = useRef<HTMLDivElement>(null);  // layer depan untuk mega zap vertikal
 
   useEffect(() => {
     let alive = true;
-    const root = ref.current!;
-    if (!root) return;
+    const fg = topRef.current!;
+    if (!fg) return;
 
-    const spawnOnce = () => {
+    const spawnMega = () => {
       if (!alive) return;
 
       const vw = window.innerWidth;
       const vh = window.innerHeight;
-      const x = Math.round(Math.random() * vw);
-      const y = Math.round(vh * 0.2 + Math.random() * vh * 0.6);
 
-      const bolt = document.createElement('div');
-      bolt.className = 'fx-bolt';
-      const rot = -20 + Math.random() * 40;
-      const scl = 0.8 + Math.random() * 0.7;
-      bolt.style.left = `${x - 8}px`;
-      bolt.style.top = `${y - 120}px`;
-      bolt.style.transform = `rotate(${rot}deg) scale(${scl})`;
+      // posisi X acak (hindari terlalu pinggir)
+      const x = Math.round(vw * (0.18 + Math.random() * 0.64));
 
+      // ===== mega bolt: garis vertikal penuh layar
+      const mega = document.createElement('div');
+      mega.className = 'fx-mega';
+      mega.style.left = `${x}px`;
+      // tebal acak biar natural
+      mega.style.width = `${3 + Math.floor(Math.random() * 4)}px`; // 3–6px
+
+      // flash global (sekedip terang di sekitar zap)
       const flash = document.createElement('div');
       flash.className = 'fx-flash';
       flash.style.setProperty('--x', `${Math.round((x / vw) * 100)}%`);
-      flash.style.setProperty('--y', `${Math.round((y / vh) * 100)}%`);
+      flash.style.setProperty('--y', `50%`);
 
-      root.appendChild(flash);
-      root.appendChild(bolt);
+      fg.appendChild(flash);
+      fg.appendChild(mega);
 
-      setTimeout(() => flash.remove(), 650);
-      setTimeout(() => bolt.remove(), 950);
+      // cleanup
+      setTimeout(() => flash.remove(), 520);
+      setTimeout(() => mega.remove(), 460);
 
-      // interval dipercepat (acak antara MIN..MAX)
+      // jadwal berikutnya (acak & lebih cepat)
       const next = MIN_MS + Math.random() * (MAX_MS - MIN_MS);
-      setTimeout(spawnOnce, next);
+      setTimeout(spawnMega, next);
     };
 
-    const t = window.setTimeout(spawnOnce, 600 + Math.random() * 600);
+    const t = setTimeout(spawnMega, 420 + Math.random() * 420);
     return () => {
       alive = false;
-      window.clearTimeout(t);
-      if (root) root.querySelectorAll('.fx-bolt, .fx-flash').forEach(el => el.remove());
+      clearTimeout(t);
+      fg.querySelectorAll('.fx-mega, .fx-flash').forEach(el => el.remove());
     };
   }, []);
 
-  return <div ref={ref} className="fx-layer" aria-hidden="true" />;
+  return (
+    <>
+      {/* layer belakang (dibiarkan ada, z-index rendah; jika nanti mau aktifkan bolt kecil tinggal dipakai) */}
+      <div ref={bgRef} className="fx-layer" aria-hidden="true" />
+      {/* layer depan: selalu di atas roda supaya mega zap terlihat */}
+      <div ref={topRef} className="fx-layer-top" aria-hidden="true" />
+    </>
+  );
 }
