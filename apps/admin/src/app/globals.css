@@ -92,7 +92,7 @@ a:hover { text-decoration: underline; }
 .codegrid{
   display:grid;
   grid-template-columns:repeat(6,1fr); /* 6 kolom sama lebar */
-  gap:8px 10px;
+  gap:7px 9px;
 }
 @media (max-width: 1280px){ .codegrid{ grid-template-columns:repeat(4,1fr); } }
 @media (max-width: 768px){  .codegrid{ grid-template-columns:repeat(2,1fr); } }
