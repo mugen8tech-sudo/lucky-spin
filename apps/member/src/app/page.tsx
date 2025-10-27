@@ -27,8 +27,9 @@ export default function Page() {
 
   // Result
   const [prize, setPrize] = useState<number | null>(null);
+  const [winningIndex, setWinningIndex] = useState<number | null>(null);
+  
   const showResult = prize != null;
-
   const disabled = useMemo(()=> spinning || !code.trim(), [spinning, code]);
 
   // Lock scroll saat panel/modal tampil (nyaman di mobile)
@@ -43,6 +44,7 @@ export default function Page() {
     if (disabled) return;
     setMsg(null);
     setPrize(null);
+    setWinningIndex(null);
 
     let res: Response | null = null;
     try {
@@ -93,6 +95,7 @@ export default function Page() {
     window.setTimeout(()=>{
       setSpinning(false);
       setPrize(amount);
+      setWinningIndex(wheel.targetIndex);
     }, wheel.spinMs + 120);
   }
 
@@ -149,6 +152,7 @@ export default function Page() {
         spinning={spinning}
         spinMs={spinMs}
         hubFill={HUB_FILL}
+        winningIndex={winningIndex}
       >
         {centerContent}
       </Wheel>
