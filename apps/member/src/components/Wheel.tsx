@@ -34,7 +34,15 @@ export default function Wheel({
     // gunakan radius lebih kecil agar ada ruang rim/bezel
     const R = 220; // radius untuk segmen
     const cx = 250, cy = 250;
-    const items: { d: string; fill: string; label: string; rotate: number }[] = [];
+    type Wedge = {
+      d: string;
+      fill: string;
+      label: string;
+      rotate: number;
+      edgeD: string;
+      idx: number;
+    };
+    const items: Wedge[] = [];
     for (let i = 0; i < N; i++) {
       const start = ((i * step - 90) * Math.PI) / 180; // -90 => 0° di atas
       const end = (((i + 1) * step - 90) * Math.PI) / 180;
@@ -48,7 +56,7 @@ export default function Wheel({
         'Z',
       ].join(' ');
       const rotate = i * step + step / 2;
-      const edgeD = `M ${x1} ${y1} A ${R+3} ${R+3} 0 ${largeArc} 1 ${x2} ${y2}`; // ring di tepi
+      const edgeD = `M ${x1} ${y1} A ${R + 3} ${R + 3} 0 ${largeArc} 1 ${x2} ${y2}`; // ring di tepi
       items.push({ d, fill: colors[i], label: formatIDR(segments[i]), rotate, edgeD, idx: i });
     }
     return items;
