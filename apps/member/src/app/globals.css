@@ -96,48 +96,57 @@ body {
   z-index: 1;                    /* di bawah roda (roda gunakan z-index >1) */
 }
 
-/* Sekedip cahaya saat kilat menyambar */
+/* ===== Layer kilat atas (baru): selalu di atas roda ===== */
+.fx-layer-top {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 5; /* > wheel-frame(3) dan > rain-layer(2) */
+}
+
+/* flash radial (dipakai bg & top) */
 .fx-flash {
   position: absolute;
   inset: 0;
-  /* pusat radial mengikuti posisi kilat */
   background: radial-gradient(60% 40% at var(--x) var(--y),
-              rgba(147,197,253,0.35), rgba(2,6,23,0) 65%);
+              rgba(255,255,255,0.35),
+              rgba(2,6,23,0) 65%);
   animation: fx-flash 620ms ease-out forwards;
 }
-@keyframes fx-flash {
-  0% { opacity: 0; }
-  10% { opacity: 1; }
-  100% { opacity: 0; }
-}
+@keyframes fx-flash { 0%{opacity:0} 12%{opacity:1} 100%{opacity:0} }
 
-/* Bentuk kilat sederhana: clip-path + glow */
-.fx-bolt {
+/* ===== Mega zap vertikal full-screen ===== */
+.fx-mega {
   position: absolute;
-  width: 16px;
-  height: 200px;
-  /* gradien biru → putih untuk "intensitas" */
-  background: linear-gradient(#bde0ff, #ffffff);
-  /* glow biru lembut */
-  filter:
-    drop-shadow(0 0 6px #93c5fd)
-    drop-shadow(0 0 14px #60a5fa)
-    drop-shadow(0 0 24px rgba(96,165,250,.6));
-  opacity: 0;
-  /* bentuk zig-zag kilat */
-  clip-path: polygon(
-    52% 0%, 64% 14%, 46% 14%, 72% 52%,
-    58% 52%, 66% 100%, 40% 70%, 54% 70%,
-    28% 28%, 44% 28%
+  top: -10vh;             /* mulai sedikit di atas layar */
+  height: 120vh;          /* sampai lewat bawah layar */
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.95) 12%,
+    rgba(191,219,254,.95) 30%,
+    rgba(59,130,246,.9) 50%,
+    rgba(191,219,254,.95) 70%,
+    rgba(255,255,255,.96) 88%,
+    rgba(255,255,255,0) 100%
   );
-  animation: fx-strike 900ms ease-out forwards;
+  box-shadow:
+    0 0 14px #93c5fd,
+    0 0 28px rgba(59,130,246,.85),
+    0 0 52px rgba(59,130,246,.6);
+  filter: blur(.25px);
+  opacity: 0;
+  animation: fx-mega 420ms ease-out forwards;
 }
 
-@keyframes fx-strike {
-  0%   { opacity: 0; transform: translateY(-8px) scale(0.96) var(--t, none); }
-  10%  { opacity: 1; }
-  60%  { opacity: .92; }
-  100% { opacity: 0; transform: translateY(0) scale(1) var(--t, none); }
+/* sedikit flicker natural */
+@keyframes fx-mega {
+  0%   { opacity: 0; transform: translateY(-6px) }
+  12%  { opacity: 1; }
+  26%  { opacity: .7; }
+  38%  { opacity: 1; }
+  100% { opacity: 0; transform: translateY(0) }
 }
 
 /* ===== Layer hujan ===== */
