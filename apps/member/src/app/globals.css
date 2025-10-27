@@ -120,18 +120,28 @@ body {
   display: grid; place-items: center;
   z-index: 4;
 }
-.center-ui { position: relative; z-index: 5; }
+.center-ui {
+  position: absolute;       /* semula relative */
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  gap: 8px;
+  place-items: center;
+  z-index: 5;
+  width: max-content;       /* biar ukurannya mengikuti panel, tidak ngefek ke layout lain */
+}
 
 /* Pointer segitiga kuning (FIX) */
 .pointer {
   position: absolute;
-  top: -12px;
+  top: -20px;               /* sedikit lebih naik karena arah segitiga dibalik */
   left: 50%;
   transform: translateX(-50%);
   width: 0; height: 0;
   border-left: 16px solid transparent;
   border-right: 16px solid transparent;
-  border-bottom: 32px solid #facc15;
+  border-top: 32px solid #facc15;  /* runcing di bawah */
   filter: drop-shadow(0 4px 4px rgba(0,0,0,.4));
   z-index: 6;
 }
