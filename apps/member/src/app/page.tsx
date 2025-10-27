@@ -59,18 +59,22 @@ export default function Page() {
     }
 
     let data: ClaimResp;
-    try { data = await res!.json(); }
-    catch { setMsg({kind:'error', text:'Respon tidak valid dari server.'}); return; }
+    try {
+      data = (await res!.json()) as ClaimResp;
+    } catch {
+      setMsg({ kind: 'error', text: 'Respon tidak valid dari server.' });
+      return;
+    }
 
     if (!data.ok) {
-      const reasonMap = {
+      const reasonMap: Record<ClaimErr['reason'], string> = {
         INVALID_CODE: 'Kode tidak ditemukan.',
         ALREADY_USED: 'Kode sudah pernah dipakai.',
         EXPIRED: 'Kode sudah kedaluwarsa.',
         UNABLE_TO_CLAIM: 'Kode tidak bisa diklaim.',
         SERVER_ERROR: 'Terjadi kesalahan server.'
-      } as const;
-      setMsg({kind:'error', text: reasonMap[data.reason] || 'Gagal.'});
+      };
+      setMsg({ kind: 'error', text: reasonMap[data.reason] || 'Gagal.' });
       return;
     }
 
@@ -78,18 +82,26 @@ export default function Page() {
     setSegments(wheel.segments);
     setSpinMs(wheel.spinMs);
 
+    // --- hitung target sudut relatif terhadap sudut sekarang
     const N = wheel.segments.length;
-    const step = 360 / Math.max(N,1);
-    const centerDeg = wheel.targetIndex * step + step/2;
-    const turns = 6 + Math.floor(Math.random()*2);
-    const final = turns*360 + (360 - centerDeg);
+    const step = 360 / Math.max(N, 1);
+    const centerDeg = wheel.targetIndex * step + step / 2; // sudut segmen target
+    const targetAngle = norm(360 - centerDeg);             // posisi target di bawah pointer (0°)
+
+    const baseTurns = 6 + Math.floor(Math.random() * 2);   // 6–7 putaran setiap kali
+    const startAngle = norm(rotation);                     // sudut saat ini (0..359)
+    const delta = baseTurns * 360 + norm(targetAngle - startAngle);
 
     setShowPanel(false);
-    setSpinning(true);
-
-    requestAnimationFrame(()=>{
-      setRotation(prev => prev % 360);
-      requestAnimationFrame(()=> setRotation(final));
+    // 1) matikan transition → set ke startAngle (instant, no anim)
+    setSpinning(false);
+    requestAnimationFrame(() => {
+      setRotation(startAngle);
+      // 2) di frame berikutnya: nyalakan transition + set ke tujuan (anim jalan panjang)
+      requestAnimationFrame(() => {
+        setSpinning(true);
+        setRotation(startAngle + delta);
+      });
     });
 
     window.setTimeout(()=>{
@@ -97,6 +109,11 @@ export default function Page() {
       setPrize(amount);
       setWinningIndex(wheel.targetIndex);
     }, wheel.spinMs + 120);
+  }
+
+  // helper
+  function norm(a: number) {
+    return ((a % 360) + 360) % 360;
   }
 
   const centerContent = (
