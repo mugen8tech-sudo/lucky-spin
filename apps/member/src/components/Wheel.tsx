@@ -3,23 +3,21 @@ import React, { useMemo } from 'react';
 
 type Props = {
   segments: number[];
-  rotationDeg: number;      // total rotasi (deg) — diterapkan ke DISK saja
+  rotationDeg: number;        // total rotasi (deg) — diterapkan ke DISK saja
   spinning: boolean;
   spinMs: number;
-  children?: React.ReactNode; // konten interaktif di pusat (ikon / panel / hasil)
+  children?: React.ReactNode; // konten di pusat (ikon/hasil)
   hubFill?: string;           // warna hub (default putih)
-  winningIndex?: number | null; // index pemenang untuk highlight & pointer shake
+  winningIndex?: number | null; // index pemenang untuk highlight
 };
 
 type Wedge = {
   d: string;        // path segmen
   fill: string;     // warna segmen
   label: string;    // teks nominal
-  rotate: number;   // sudut pusat wedge (deg)
-  edgeD: string;    // arc tepi luar (untuk rim glow pemenang)
+  midDeg: number;   // sudut tengah wedge (deg, 0° = arah atas)
+  edgeD: string;    // arc tepi luar (untuk glow)
   idx: number;      // index segmen
-  tx: number;       // posisi teks X (legacy, tidak dipakai lagi)
-  ty: number;       // posisi teks Y (legacy)
 };
 
 export default function Wheel({
@@ -34,21 +32,22 @@ export default function Wheel({
   const N = Math.max(segments.length, 1);
   const step = 360 / N;
 
-  // Ukuran geometri disk (bukan bezel)
+  // Geometri
   const R = 220;                 // radius piringan segmen
   const cx = 250, cy = 250;      // pusat viewBox
-  const textR = R - 55;          // jarak label dari pusat (50–70 bagus)
+  const textR = R - 55;          // jarak label dari pusat
 
-  // Palet warna segmen
+  // Palet warna
   const colors = useMemo(() => {
     const base = ['#22c55e','#0ea5e9','#f59e0b','#ef4444','#a78bfa','#14b8a6','#eab308','#f43f5e'];
     return Array.from({ length: N }, (_, i) => base[i % base.length]);
   }, [N]);
 
-  // Bangun data wedge lengkap + koordinat/metadata
+  // Wedges
   const items = useMemo<Wedge[]>(() => {
     const arr: Wedge[] = [];
     for (let i = 0; i < N; i++) {
+      // sudut untuk path (SVG pakai 0° ke kanan; kita shift -90 agar 0° = atas)
       const start = ((i * step - 90) * Math.PI) / 180;
       const end   = (((i + 1) * step - 90) * Math.PI) / 180;
 
@@ -57,17 +56,18 @@ export default function Wheel({
       const largeArc = step > 180 ? 1 : 0;
 
       const d = `M ${cx} ${cy} L ${x1} ${y1} A ${R} ${R} 0 ${largeArc} 1 ${x2} ${y2} Z`;
-      const rotate = i * step + step / 2; // sudut tengah wedge (deg)
       const edgeD = `M ${x1} ${y1} A ${R + 3} ${R + 3} 0 ${largeArc} 1 ${x2} ${y2}`;
 
-      // Posisi label (legacy), kini kita pakai transform group agar teks tetap horizontal
-      const theta = ((i * step + step / 2) - 90) * Math.PI / 180;
-      const tx = cx + textR * Math.cos(theta);
-      const ty = cy + textR * Math.sin(theta);
+      // sudut tengah wedge dengan referensi 0° = atas (agar mudah untuk orientasi label radial)
+      const midDeg = (i + 0.5) * step - 90;
 
       arr.push({
-        d, fill: colors[i], label: formatIDR(segments[i]),
-        rotate, edgeD, idx: i, tx, ty
+        d,
+        fill: colors[i],
+        label: formatIDR(segments[i]),
+        midDeg,
+        edgeD,
+        idx: i,
       });
     }
     return arr;
@@ -87,7 +87,7 @@ export default function Wheel({
         <div className="bezel-outer" />
         <div className="bezel-inner" />
 
-        {/* Disk berputar: hanya layer ini yang diberi transform */}
+        {/* Disk berputar */}
         <div
           className="wheel-disk"
           style={{
@@ -96,7 +96,7 @@ export default function Wheel({
           }}
         >
           <svg width="100%" height="100%" viewBox="0 0 500 500" style={{ display: 'block' }}>
-            {/* LAYER 1: Semua wedges (tanpa teks) */}
+            {/* LAYER 1: wedges */}
             <g className="wedge-layer">
               {items.map((p) => (
                 <g key={`w-${p.idx}`}>
@@ -106,7 +106,7 @@ export default function Wheel({
               ))}
             </g>
 
-            {/* LAYER 2: Highlight pemenang (di atas wedges, di bawah teks) */}
+            {/* LAYER 2: highlight pemenang */}
             {typeof winningIndex === 'number' && items[winningIndex] && (
               <g className="winner-layer">
                 <path d={items[winningIndex].d} className="wedge-win-fill" />
@@ -114,19 +114,15 @@ export default function Wheel({
               </g>
             )}
 
-            {/* LAYER 3: Label (paling atas) */}
+            {/* LAYER 3: label — kini M I R I N G mengikut radial wedge */}
             <g className="labels-layer">
               {items.map((p) => {
-                const fs = fitFont(p.label, step, textR); // auto-fit font berdasarkan chord
-                // Trik transform:
-                // - translate ke pusat (cx,cy)
-                // - rotate ke tengah wedge
-                // - translate ke radius label
-                // - rotate balik agar teks horizontal
+                const fs = fitFont(p.label, step, textR, 11, 18); // sedikit lebih kecil biar gak terlihat tebal
                 return (
                   <g
                     key={`t-${p.idx}`}
-                    transform={`translate(${cx} ${cy}) rotate(${p.rotate}) translate(0 ${-textR}) rotate(${-p.rotate})`}
+                    // rotate(midDeg) => teks menghadap radial (miring mengikuti wedge)
+                    transform={`translate(${cx} ${cy}) rotate(${p.midDeg}) translate(0 ${-textR})`}
                   >
                     <text
                       className={winningIndex === p.idx ? 'label win-label' : 'label'}
@@ -134,8 +130,8 @@ export default function Wheel({
                       dominantBaseline="middle"
                       alignmentBaseline="middle"
                       fontSize={fs}
-                      // sedikit outline supaya kontras di semua warna slice
-                      style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,.55)', strokeWidth: 3 }}
+                      fontWeight={500}                      // ↓ kurangi ketebalan
+                      style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,.45)', strokeWidth: 1.2 }}
                     >
                       {p.label}
                     </text>
@@ -144,7 +140,7 @@ export default function Wheel({
               })}
             </g>
 
-            {/* Ring tipis di tepi disk */}
+            {/* Ring tipis */}
             <circle cx="250" cy="250" r={R + 3} fill="none" stroke="rgba(15,23,42,.55)" strokeWidth="3" />
           </svg>
         </div>
