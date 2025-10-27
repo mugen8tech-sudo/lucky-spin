@@ -33,6 +33,7 @@ export default function Wheel({
   const step = 360 / N;
   const R = 220;                 // radius untuk piringan segmen (bukan bezel)
   const cx = 250, cy = 250;      // pusat viewBox
+  const textR = R - 55; // jarak teks dari pusat (atur 50–70 sesuai selera)
 
   // palet segmen
   const colors = useMemo(() => {
@@ -105,7 +106,9 @@ export default function Wheel({
                     y="250"
                     className={isWin ? 'label win-label' : 'label'}
                     textAnchor="middle"
-                    transform={`rotate(${p.rotate} 250 250) translate(0 -165) rotate(90 250 250)`}
+                    dominantBaseline="middle"
+                    alignmentBaseline="middle"
+                    transform={`rotate(${p.rotate} 250 250) translate(0 -${textR})`}
                   >
                     {p.label}
                   </text>
