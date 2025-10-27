@@ -140,6 +140,35 @@ body {
   100% { opacity: 0; transform: translateY(0) scale(1) var(--t, none); }
 }
 
+/* ===== Layer hujan ===== */
+.rain-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 2; /* di atas petir flash, di bawah wheel */
+}
+
+.rain-drop {
+  position: absolute;
+  top: -15vh; /* start di luar layar */
+  background: linear-gradient(180deg, rgba(255,255,255,.65), rgba(147,197,253,.18));
+  border-radius: 2px;
+  will-change: transform;
+  animation-name: rain-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes rain-fall {
+  from {
+    transform: translate3d(0, -10vh, 0);
+  }
+  to {
+    transform: translate3d(var(--drift, 0px), 110vh, 0);
+  }
+}
+
 /* Pastikan wheel berada di atas lightning (z-index lebih tinggi)
    .wheel-frame sudah relative; pointer sudah z-index:2
    Kita jadikan container wheel punya z-index 3 supaya aman */
