@@ -337,3 +337,23 @@ body {
   85%  { transform: translateX(-50%) rotate(3deg); }
   100% { transform: translateX(-50%) rotate(0deg); }
 }
+
+/* ===== Wheel labels tidy ===== */
+.wheel-label{
+  font-weight: 700;
+  letter-spacing: .2px;
+  user-select: none;
+  pointer-events: none;
+
+  /* SVG text colors & outline biar kebaca di semua warna slice */
+  fill: #eaeaea;                 /* warna teks */
+  paint-order: stroke fill;
+  stroke: rgba(0,0,0,.55);       /* outline tipis */
+  stroke-width: 3px;
+}
+@media (prefers-color-scheme: light){
+  .wheel-label{
+    fill: #111;
+    stroke: rgba(255,255,255,.85);
+  }
+}
