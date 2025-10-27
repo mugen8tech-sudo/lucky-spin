@@ -9,6 +9,8 @@
   --primary-600: #15803d;
   --danger: #ef4444;
   --ring: #22c55e33;
+
+  /* ukuran roda responsif */
   --wheel-size: clamp(320px, 90vw, 600px);
 }
 
@@ -21,8 +23,15 @@ body {
   font-family: ui-sans-serif, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
 
-.screen { min-height: 100dvh; display: grid; place-items: center; padding: 20px; }
+/* ====== SCREEN (full page, center) */
+.screen {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
 
+/* ====== BASIC UI */
 .input {
   width: 100%; padding: 12px 14px; font-size: 16px;
   border: 1px solid var(--border); border-radius: 10px; background: #0b1323; color: var(--text);
@@ -38,7 +47,27 @@ body {
 .alert-error { background: #3f0d0d; color: #fecaca; border: 1px solid #7f1d1d; }
 .alert-success { background: #052e16; color: #bbf7d0; border: 1px solid #14532d; }
 
-/* ===== Wheel layers ===== */
+/* ukuran ikon hub (jika pakai img) */
+.hub-img {
+  width: min(120px, 22vw);
+  height: auto;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ====== WHEEL WRAPPER (FIX) */
+.wheel-frame {
+  position: relative;
+  width: var(--wheel-size);
+  height: var(--wheel-size);
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  z-index: 3; /* di atas hujan & flash, di bawah mega-zap top */
+}
+
+/* container utama wheel */
 .wheel {
   width: 100%;
   height: 100%;
@@ -50,39 +79,38 @@ body {
 .bezel-outer {
   position: absolute; inset: 0;
   border-radius: 50%;
-  /* ring gelap + highlight tipis (atas) */
   background:
-    radial-gradient(120% 120% at 50% 30%, rgba(255,255,255,0.08), transparent 45%) ,
-    radial-gradient(120% 120% at 50% 70%, rgba(255,255,255,0.04), transparent 46%) ,
+    radial-gradient(120% 120% at 50% 30%, rgba(255,255,255,0.08), transparent 45%),
+    radial-gradient(120% 120% at 50% 70%, rgba(255,255,255,0.04), transparent 46%),
     #0b1323;
   border: 10px solid #0b1323;
   box-shadow:
     0 20px 70px rgba(0,0,0,.45),
     inset 0 0 0 4px rgba(255,255,255,.06),
-    inset 0 0 0 10px #0f172a; /* outer rim */
+    inset 0 0 0 10px #0f172a;
 }
 
-/* Bezel dalam tipis untuk kedalaman */
+/* Bezel dalam untuk kedalaman */
 .bezel-inner {
   position: absolute;
-  inset: 16px; /* ruang untuk disk */
+  inset: 16px;
   border-radius: 50%;
   box-shadow:
     inset 0 0 0 2px rgba(255,255,255,.06),
     inset 0 0 16px rgba(0,0,0,.35);
 }
 
-/* Disk berputar */
+/* Disk berputar (segmen+teks) */
 .wheel-disk {
   position: absolute;
-  inset: 26px; /* lebih kecil dari bezel-inner */
+  inset: 26px;
   border-radius: 50%;
   overflow: hidden;
   will-change: transform;
   background: radial-gradient(140% 100% at 50% -30%, rgba(255,255,255,0.06), transparent 40%);
 }
 
-/* Hub statis di tengah (ikon/tombol di atasnya) */
+/* Hub statis (ikon/tombol di atasnya) */
 .hub {
   position: absolute;
   left: 50%; top: 50%;
@@ -92,12 +120,38 @@ body {
   display: grid; place-items: center;
   z-index: 4;
 }
-
 .center-ui { position: relative; z-index: 5; }
 
-.pointer { z-index: 6; } /* pastikan di atas semuanya */
+/* Pointer segitiga kuning (FIX) */
+.pointer {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 16px solid transparent;
+  border-right: 16px solid transparent;
+  border-bottom: 32px solid #facc15;
+  filter: drop-shadow(0 4px 4px rgba(0,0,0,.4));
+  z-index: 6;
+}
 
-/* ===== MODAL HASIL (full screen) ===== */
+/* CTA ikon di hub (optional) */
+.cta-icon { border: none; background: transparent; padding: 8px; border-radius: 999px; outline: none; cursor: pointer; }
+.cta-icon:focus-visible { box-shadow: 0 0 0 4px var(--ring); }
+
+/* ====== PANEL INPUT (di tengah roda saat dibuka) */
+.panel {
+  width: min(320px, 78vw);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+  display: grid; gap: 10px;
+}
+
+/* ===== Modal hasil full-screen */
 .modal-overlay {
   position: fixed; inset: 0;
   background: rgba(2, 6, 23, .65);
@@ -123,46 +177,41 @@ body {
   .modal-actions .btn, .modal-actions .btn-primary { width: 100%; }
 }
 
-/* confetti (jika dipakai) */
-.confetti { position: fixed; top: -10px; width: 8px; height: 14px; opacity: .9; transform: translateY(-10px) rotate(0deg); animation: fall 2400ms linear forwards; }
-@keyframes fall { to { transform: translateY(110vh) rotate(520deg); opacity: .95; } }
-
-/* ukuran ikon hub (menyesuaikan layar) */
-.hub-img {
-  width: min(120px, 22vw);
-  height: auto;
-  display: block;
-  pointer-events: none;
-  user-select: none;
-}
-
-/* ===== Lightning FX (background) ===== */
+/* ===== Lightning FX (layer belakang) */
 .fx-layer {
   position: fixed;
   inset: 0;
-  pointer-events: none;          /* tidak mengganggu klik */
+  pointer-events: none;
   overflow: hidden;
-  z-index: 1;                    /* di bawah roda (roda gunakan z-index >1) */
+  z-index: 1; /* di bawah hujan & wheel */
 }
 
-/* ===== Layer kilat atas (baru): selalu di atas roda ===== */
+/* ===== Lightning FX (layer depan — mega bolt di atas wheel) */
 .fx-layer-top {
   position: fixed;
   inset: 0;
   pointer-events: none;
   overflow: hidden;
-  z-index: 5; /* > wheel-frame(3) dan > rain-layer(2) */
+  z-index: 5; /* di atas wheel & hujan */
 }
 
-/* SVG container petir */
+/* Flash radial (dipakai kedua layer) */
+.fx-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(50% 40% at var(--x) var(--y),
+              rgba(255,255,255,0.45), rgba(2,6,23,0) 65%);
+  animation: fx-flash 620ms ease-out forwards;
+}
+@keyframes fx-flash { 0%{opacity:0} 12%{opacity:1} 100%{opacity:0} }
+
+/* SVG container petir fractal */
 .fx-mega-svg {
   position: absolute;
   inset: 0;
   pointer-events: none;
   animation: bolt-fade 620ms ease-out forwards;
 }
-
-/* Garis glow (belakang) */
 .bolt-glow {
   fill: none;
   stroke: #60a5fa;
@@ -171,15 +220,10 @@ body {
   stroke-linejoin: round;
   filter: url(#glowBlue);
   opacity: .95;
-  /* trik “menggambar” dengan pathLength=1 */
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
-  animation:
-    bolt-draw 180ms linear forwards,
-    bolt-flicker 420ms ease-in-out 1;
+  animation: bolt-draw 180ms linear forwards, bolt-flicker 420ms ease-in-out 1;
 }
-
-/* Garis inti (depan) */
 .bolt-core {
   fill: none;
   stroke: #ffffff;
@@ -189,104 +233,42 @@ body {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
   mix-blend-mode: screen;
-  animation:
-    bolt-draw 180ms linear forwards,
-    bolt-flicker 420ms ease-in-out 1;
+  animation: bolt-draw 180ms linear forwards, bolt-flicker 420ms ease-in-out 1;
 }
-
-/* Cabang lebih tipis dan cepat memudar */
 .bolt-branch.bolt-glow { stroke-width: 6px; opacity: .9; }
 .bolt-branch.bolt-core { stroke-width: 2.2px; opacity: .95; }
+@keyframes bolt-draw { to { stroke-dashoffset: 0; } }
+@keyframes bolt-flicker { 0%{opacity:1} 35%{opacity:.75} 60%{opacity:1} 100%{opacity:0} }
+@keyframes bolt-fade { 0%{opacity:0} 15%{opacity:1} 100%{opacity:0} }
 
-@keyframes bolt-draw {
-  to { stroke-dashoffset: 0; }
-}
-@keyframes bolt-flicker {
-  0% { opacity: 1; }
-  35% { opacity: .75; }
-  60% { opacity: 1; }
-  100% { opacity: .0; }
-}
-@keyframes bolt-fade {
-  0% { opacity: 0; }
-  15% { opacity: 1; }
-  100% { opacity: 0; }
-}
-
-/* flash radial (dipakai bg & top) */
-.fx-flash {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(60% 40% at var(--x) var(--y),
-              rgba(255,255,255,0.35),
-              rgba(2,6,23,0) 65%);
-  animation: fx-flash 620ms ease-out forwards;
-}
-@keyframes fx-flash { 0%{opacity:0} 12%{opacity:1} 100%{opacity:0} }
-
-/* ===== Mega zap vertikal full-screen ===== */
-.fx-mega {
-  position: absolute;
-  top: -10vh;             /* mulai sedikit di atas layar */
-  height: 120vh;          /* sampai lewat bawah layar */
-  background: linear-gradient(
-    180deg,
-    rgba(255,255,255,0) 0%,
-    rgba(255,255,255,.95) 12%,
-    rgba(191,219,254,.95) 30%,
-    rgba(59,130,246,.9) 50%,
-    rgba(191,219,254,.95) 70%,
-    rgba(255,255,255,.96) 88%,
-    rgba(255,255,255,0) 100%
-  );
-  box-shadow:
-    0 0 14px #93c5fd,
-    0 0 28px rgba(59,130,246,.85),
-    0 0 52px rgba(59,130,246,.6);
-  filter: blur(.25px);
-  opacity: 0;
-  animation: fx-mega 420ms ease-out forwards;
-}
-
-/* sedikit flicker natural */
-@keyframes fx-mega {
-  0%   { opacity: 0; transform: translateY(-6px) }
-  12%  { opacity: 1; }
-  26%  { opacity: .7; }
-  38%  { opacity: 1; }
-  100% { opacity: 0; transform: translateY(0) }
-}
-
-/* ===== Layer hujan ===== */
+/* ===== Rain FX */
 .rain-layer {
   position: fixed;
   inset: 0;
   pointer-events: none;
   overflow: hidden;
-  z-index: 2; /* di atas petir flash, di bawah wheel */
+  z-index: 2; /* di atas flash belakang, di bawah wheel */
 }
-
 .rain-drop {
   position: absolute;
-  top: -15vh; /* start di luar layar */
+  top: -15vh;
   background: linear-gradient(180deg, rgba(255,255,255,.65), rgba(147,197,253,.18));
   border-radius: 2px;
   will-change: transform;
   animation-name: rain-fall;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
+  opacity: .8;
 }
-
 @keyframes rain-fall {
-  from {
-    transform: translate3d(0, -10vh, 0);
-  }
-  to {
-    transform: translate3d(var(--drift, 0px), 110vh, 0);
-  }
+  from { transform: translate3d(0, -10vh, 0); }
+  to   { transform: translate3d(var(--drift, 0px), 110vh, 0); }
 }
 
-/* Pastikan wheel berada di atas lightning (z-index lebih tinggi)
-   .wheel-frame sudah relative; pointer sudah z-index:2
-   Kita jadikan container wheel punya z-index 3 supaya aman */
-.wheel-frame { z-index: 3; }
+/* ===== Confetti (opsional) */
+.confetti {
+  position: fixed; top: -10px; width: 8px; height: 14px;
+  opacity: .9; transform: translateY(-10px) rotate(0deg);
+  animation: fall 2400ms linear forwards;
+}
+@keyframes fall { to { transform: translateY(110vh) rotate(520deg); opacity: .95; } }
