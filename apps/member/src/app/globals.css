@@ -105,6 +105,65 @@ body {
   z-index: 5; /* > wheel-frame(3) dan > rain-layer(2) */
 }
 
+/* SVG container petir */
+.fx-mega-svg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: bolt-fade 620ms ease-out forwards;
+}
+
+/* Garis glow (belakang) */
+.bolt-glow {
+  fill: none;
+  stroke: #60a5fa;
+  stroke-width: 9px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: url(#glowBlue);
+  opacity: .95;
+  /* trik “menggambar” dengan pathLength=1 */
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation:
+    bolt-draw 180ms linear forwards,
+    bolt-flicker 420ms ease-in-out 1;
+}
+
+/* Garis inti (depan) */
+.bolt-core {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 3.2px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  mix-blend-mode: screen;
+  animation:
+    bolt-draw 180ms linear forwards,
+    bolt-flicker 420ms ease-in-out 1;
+}
+
+/* Cabang lebih tipis dan cepat memudar */
+.bolt-branch.bolt-glow { stroke-width: 6px; opacity: .9; }
+.bolt-branch.bolt-core { stroke-width: 2.2px; opacity: .95; }
+
+@keyframes bolt-draw {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes bolt-flicker {
+  0% { opacity: 1; }
+  35% { opacity: .75; }
+  60% { opacity: 1; }
+  100% { opacity: .0; }
+}
+@keyframes bolt-fade {
+  0% { opacity: 0; }
+  15% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 /* flash radial (dipakai bg & top) */
 .fx-flash {
   position: absolute;
