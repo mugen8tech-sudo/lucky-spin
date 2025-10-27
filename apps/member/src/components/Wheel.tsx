@@ -11,6 +11,15 @@ type Props = {
   winningIndex?: number | null;     // NEW
 };
 
+type Wedge = {
+  d: string;
+  fill: string;
+  label: string;
+  rotate: number;
+  edgeD: string;
+  idx: number;
+};
+
 export default function Wheel({
   segments,
   rotationDeg,
@@ -22,6 +31,8 @@ export default function Wheel({
 }: Props) {
   const N = Math.max(segments.length, 1);
   const step = 360 / N;
+  const R = 220;                 // radius untuk piringan segmen (bukan bezel)
+  const cx = 250, cy = 250;      // pusat viewBox
 
   // palet segmen
   const colors = useMemo(() => {
@@ -29,38 +40,31 @@ export default function Wheel({
     return Array.from({ length: N }, (_, i) => base[i % base.length]);
   }, [N]);
 
-  // hitung path tiap segmen (DIK: disk berputar, bukan bezel/hub)
-  const paths = useMemo(() => {
-    // gunakan radius lebih kecil agar ada ruang rim/bezel
-    const R = 220; // radius untuk segmen
-    const cx = 250, cy = 250;
-    type Wedge = {
-      d: string;
-      fill: string;
-      label: string;
-      rotate: number;
-      edgeD: string;
-      idx: number;
-    };
-    const items: Wedge[] = [];
+  const items = useMemo<Wedge[]>(() => {
+    const arr: Wedge[] = [];
     for (let i = 0; i < N; i++) {
-      const start = ((i * step - 90) * Math.PI) / 180; // -90 => 0° di atas
-      const end = (((i + 1) * step - 90) * Math.PI) / 180;
+      const start = ((i * step - 90) * Math.PI) / 180;
+      const end   = (((i + 1) * step - 90) * Math.PI) / 180;
+
       const x1 = cx + R * Math.cos(start), y1 = cy + R * Math.sin(start);
       const x2 = cx + R * Math.cos(end),   y2 = cy + R * Math.sin(end);
       const largeArc = step > 180 ? 1 : 0;
-      const d = [
-        `M ${cx} ${cy}`,
-        `L ${x1} ${y1}`,
-        `A ${R} ${R} 0 ${largeArc} 1 ${x2} ${y2}`,
-        'Z',
-      ].join(' ');
+
+      const d = `M ${cx} ${cy} L ${x1} ${y1} A ${R} ${R} 0 ${largeArc} 1 ${x2} ${y2} Z`;
       const rotate = i * step + step / 2;
-      const edgeD = `M ${x1} ${y1} A ${R + 3} ${R + 3} 0 ${largeArc} 1 ${x2} ${y2}`; // ring di tepi
-      items.push({ d, fill: colors[i], label: formatIDR(segments[i]), rotate, edgeD, idx: i });
+      const edgeD = `M ${x1} ${y1} A ${R + 3} ${R + 3} 0 ${largeArc} 1 ${x2} ${y2}`;
+
+      arr.push({
+        d,
+        fill: colors[i],
+        label: formatIDR(segments[i]),
+        rotate,
+        edgeD,
+        idx: i,
+      });
     }
-    return items;
-  }, [segments, N, step, colors]);
+    return arr;
+  }, [N, step, colors, segments]);
 
   // stroke kontras untuk hub
   const hubStroke = isDark(hubFill) ? '#1f2937' : '#e5e7eb';
@@ -86,21 +90,16 @@ export default function Wheel({
               const isWin = winningIndex === p.idx;
               return (
                 <g key={p.idx}>
-                  {/* segmen dasar */}
                   <path d={p.d} fill={p.fill} />
                   <path d={p.d} fill="none" stroke="rgba(15,23,42,.22)" strokeWidth="1.5" />
 
-                  {/* highlight pemenang */}
                   {isWin && (
                     <>
-                      {/* inner glow (menerangi wedge) */}
                       <path d={p.d} className="wedge-win-fill" />
-                      {/* rim glow di tepi wedge */}
                       <path d={p.edgeD} className="wedge-win-arc" />
                     </>
                   )}
 
-                  {/* label */}
                   <text
                     x="250"
                     y="250"
@@ -113,7 +112,7 @@ export default function Wheel({
                 </g>
               );
             })}
-            <circle cx="250" cy="250" r={R+3} fill="none" stroke="rgba(15,23,42,.55)" strokeWidth="3" />
+            <circle cx="250" cy="250" r={R + 3} fill="none" stroke="rgba(15,23,42,.55)" strokeWidth="3" />
           </svg>
         </div>
 
