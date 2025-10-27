@@ -3,21 +3,21 @@ import React, { useMemo } from 'react';
 
 type Props = {
   segments: number[];
-  rotationDeg: number;        // total rotasi (deg) — diterapkan ke DISK saja
+  rotationDeg: number;          // rotasi total roda, diterapkan ke container .wheel-disk (CSS)
   spinning: boolean;
   spinMs: number;
-  children?: React.ReactNode; // konten di pusat (ikon/hasil)
-  hubFill?: string;           // warna hub (default putih)
-  winningIndex?: number | null; // index pemenang untuk highlight
+  children?: React.ReactNode;   // konten di pusat (ikon/hasil)
+  hubFill?: string;             // warna hub
+  winningIndex?: number | null; // highlight pemenang
 };
 
 type Wedge = {
-  d: string;        // path segmen
-  fill: string;     // warna segmen
-  label: string;    // teks nominal
-  midDeg: number;   // sudut tengah wedge (deg, 0° = arah atas)
-  edgeD: string;    // arc tepi luar (untuk glow)
-  idx: number;      // index segmen
+  d: string;       // path segmen
+  fill: string;    // warna segmen
+  label: string;   // teks nominal
+  midDeg: number;  // sudut tengah wedge (deg), 0° = atas
+  edgeD: string;   // arc tepi luar
+  idx: number;     // index segmen
 };
 
 export default function Wheel({
@@ -32,10 +32,10 @@ export default function Wheel({
   const N = Math.max(segments.length, 1);
   const step = 360 / N;
 
-  // Geometri
-  const R = 220;                 // radius piringan segmen
-  const cx = 250, cy = 250;      // pusat viewBox
-  const textR = R - 55;          // jarak label dari pusat
+  // Geometri dasar
+  const R = 220;               // radius piringan segmen
+  const cx = 250, cy = 250;    // pusat viewBox
+  const textR = R - 55;        // radius teks (posisi label)
 
   // Palet warna
   const colors = useMemo(() => {
@@ -43,11 +43,11 @@ export default function Wheel({
     return Array.from({ length: N }, (_, i) => base[i % base.length]);
   }, [N]);
 
-  // Wedges
+  // Build wedges
   const items = useMemo<Wedge[]>(() => {
     const arr: Wedge[] = [];
     for (let i = 0; i < N; i++) {
-      // sudut untuk path (SVG pakai 0° ke kanan; kita shift -90 agar 0° = atas)
+      // SVG: 0° = ke kanan; kita geser -90° supaya 0° = atas
       const start = ((i * step - 90) * Math.PI) / 180;
       const end   = (((i + 1) * step - 90) * Math.PI) / 180;
 
@@ -57,9 +57,7 @@ export default function Wheel({
 
       const d = `M ${cx} ${cy} L ${x1} ${y1} A ${R} ${R} 0 ${largeArc} 1 ${x2} ${y2} Z`;
       const edgeD = `M ${x1} ${y1} A ${R + 3} ${R + 3} 0 ${largeArc} 1 ${x2} ${y2}`;
-
-      // sudut tengah wedge dengan referensi 0° = atas (agar mudah untuk orientasi label radial)
-      const midDeg = (i + 0.5) * step - 90;
+      const midDeg = (i + 0.5) * step - 90; // sudut bisektor wedge (0° = atas)
 
       arr.push({
         d,
@@ -73,11 +71,9 @@ export default function Wheel({
     return arr;
   }, [N, step, colors, segments]);
 
-  // Kontras garis hub
+  // Kontras hub
   const hubStroke = isDark(hubFill) ? '#1f2937' : '#e5e7eb';
   const pointerCls = winningIndex != null ? 'pointer shake' : 'pointer';
-
-  const normDeg = (d: number) => ((d % 360) + 360) % 360;
 
   return (
     <div className="wheel-frame">
@@ -89,7 +85,7 @@ export default function Wheel({
         <div className="bezel-outer" />
         <div className="bezel-inner" />
 
-        {/* Disk berputar */}
+        {/* Disk berputar via CSS */}
         <div
           className="wheel-disk"
           style={{
@@ -116,21 +112,27 @@ export default function Wheel({
               </g>
             )}
 
-            {/* LAYER 3: label (miring ikut wedge + auto-flip agar selalu tegak) */}
+            {/* LAYER 3: label — RADIAL mengikuti wedge + auto FLIP di sisi bawah */}
             <g className="labels-layer">
               {items.map((p) => {
-                const fs = fitFont(p.label, step, textR, 11, 18);
-                // Sudut absolut label di viewport = rotasi disk + sudut tengah wedge
-                const abs = normDeg(rotationDeg + p.midDeg);
-                // Jika berada di bawah (90°..270°), balik 180° biar teks tidak terbalik
-                const flip = abs > 90 && abs < 270 ? 180 : 0;
+                const fs = fitFont(p.label, step, textR, 11, 17);
+
+                // Catatan penting:
+                // - Seluruh <svg> ikut berputar karena parent .wheel-disk di-rotate via CSS.
+                // - Jadi penentuan flip TIDAK boleh ikut rotationDeg. Cukup pakai midDeg.
+                // - Jika label berada di bawah (90°..270°), putar 180° agar tetap tegak dibaca.
+                const absMid = normDeg(p.midDeg);
+                const flip = absMid > 90 && absMid < 270 ? 180 : 0;
 
                 return (
                   <g
                     key={`t-${p.idx}`}
-                    // rotate(mid) => miring mengikuti wedge (tangensial),
-                    // translate ke radius label, lalu rotate(flip) jika perlu.
-                    transform={`translate(${cx} ${cy}) rotate(${p.midDeg}) translate(0 ${-textR}) rotate(${flip})`}
+                    transform={
+                      // rotate(midDeg)   -> posisikan basis teks di arah radial (miring seperti wedge)
+                      // translate        -> geser ke radius label
+                      // rotate(flip)     -> balik 180° hanya bila wedge ada di bawah
+                      `translate(${cx} ${cy}) rotate(${p.midDeg}) translate(0 ${-textR}) rotate(${flip})`
+                    }
                   >
                     <text
                       className={winningIndex === p.idx ? 'label win-label' : 'label'}
@@ -138,13 +140,6 @@ export default function Wheel({
                       dominantBaseline="middle"
                       alignmentBaseline="middle"
                       fontSize={fs}
-                      fontWeight={500}                // lebih tipis
-                      style={{
-                        paintOrder: 'stroke',
-                        stroke: 'rgba(0,0,0,.35)',   // outline lebih tipis
-                        strokeWidth: 0.9,
-                        letterSpacing: 0.2,
-                      }}
                     >
                       {p.label}
                     </text>
@@ -175,11 +170,11 @@ function formatIDR(n: number) {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
 }
 
-// Auto-fit ukuran font berdasarkan lebar chord pada radius label
+// auto-fit ukuran font berdasar chord pada radius label
 function fitFont(label: string, arcDeg: number, r: number, min = 12, max = 20) {
   const arcRad = (Math.PI * arcDeg) / 180;
-  const chord = 2 * r * Math.sin(arcRad / 2);       // panjang chord
-  const perChar = 0.6;                               // ~0.6 * fontSize per karakter
+  const chord = 2 * r * Math.sin(arcRad / 2);
+  const perChar = 0.62; // ~0.62*fontSize per karakter
   const est = (chord * 0.9) / (Math.max(4, label.length) * perChar);
   return Math.max(min, Math.min(max, est));
 }
@@ -191,4 +186,8 @@ function isDark(hex: string) {
   const b = parseInt(m.slice(4, 6), 16) || 0;
   const L = 0.2126 * r + 0.7152 * g + 0.0722 * b;
   return L < 128;
+}
+
+function normDeg(d: number) {
+  return ((d % 360) + 360) % 360;
 }
