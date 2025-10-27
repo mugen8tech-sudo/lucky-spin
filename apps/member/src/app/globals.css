@@ -283,55 +283,30 @@ body {
 }
 @keyframes fall { to { transform: translateY(110vh) rotate(520deg); opacity: .95; } }
 
-/* ===== Label roda (rapih & kontras) ===== */
+/* ===== Label roda: lurus + outline agar kontras di semua warna ===== */
 .label{
   font-weight: 600;
-  letter-spacing: .2px;
   user-select: none;
   pointer-events: none;
-
-  /* Outline tipis supaya kebaca di semua warna slice */
   fill: #0f172a;
   paint-order: stroke fill;
-  stroke: rgba(255,255,255,0.78);
+  stroke: rgba(255,255,255,0.80);
   stroke-width: .8px;
-
   text-rendering: geometricPrecision;
-  font-kerning: normal;
 }
 @media (prefers-color-scheme: dark){
-  .label{
-    fill: #0b1220;
-    stroke: rgba(255,255,255,0.85);
-  }
+  .label{ fill:#0b1220; stroke:rgba(255,255,255,.85); }
 }
 
-/* Pop kecil pada label pemenang */
-.win-label {
-  font-weight: 600;
-  animation: win-pop 260ms ease-out 1;
-}
-@keyframes win-pop {
-  0% { transform: scale(1); }
-  60% { transform: scale(1.08); }
-  100% { transform: scale(1); }
-}
+/* Pop kecil saat menang (opsional, sudah dipakai komponen) */
+.win-label { animation: win-pop 260ms ease-out 1; font-weight: 700; }
+@keyframes win-pop { 0%{transform:scale(1)} 60%{transform:scale(1.08)} 100%{transform:scale(1)} }
 
-/* Glow wedge pemenang */
-.wedge-win-fill {
-  fill: rgba(255,255,255,0.10);
-  filter: drop-shadow(0 0 8px rgba(255,255,255,0.25));
-}
-
-/* Rim glow di tepi wedge pemenang */
+/* Glow wedge pemenang (sudah dipakai komponen) */
+.wedge-win-fill { fill: rgba(255,255,255,0.10); filter: drop-shadow(0 0 8px rgba(255,255,255,0.25)); }
 .wedge-win-arc {
-  fill: none;
-  stroke: rgba(255,255,255,0.85);
-  stroke-width: 8px;
-  stroke-linecap: round;
-  filter:
-    drop-shadow(0 0 8px rgba(147,197,253,.7))
-    drop-shadow(0 0 18px rgba(96,165,250,.6));
+  fill: none; stroke: rgba(255,255,255,0.85); stroke-width: 8px; stroke-linecap: round;
+  filter: drop-shadow(0 0 8px rgba(147,197,253,.7)) drop-shadow(0 0 18px rgba(96,165,250,.6));
   opacity: .9;
 }
 
