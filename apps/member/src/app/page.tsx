@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import LightningFX from '../components/LightningFX';
 import Wheel from '../components/Wheel';
 
 type ClaimOk = { ok:true; amount:number; wheel:{ segments:number[]; targetIndex:number; spinMs:number } };
@@ -136,6 +137,10 @@ export default function Page() {
 
   return (
     <main className="screen">
+      {/* Layer kilat di background */}
+      <LightningFX />
+
+      {/* Wheel di atas efek */}
       <Wheel
         segments={segments}
         rotationDeg={rotation}
