@@ -378,34 +378,33 @@ export default function MembersPage(){
               <input className="input" type="datetime-local" value={expiresAt} onChange={e=>setExpiresAt(e.target.value)} style={{marginTop:4}} />
             </label>
           </div>
-
-          {/* Hasil */}
-          {generated.length>0 && (
-            <div style={{marginTop:16}}>
-              <h3>Hasil ({generated.length} kode)</h3>
-
-              {/* Copy tetap grid 6 kolom: tab (\t) untuk kolom, newline (\n) untuk baris */}
-              <button
-                className="btn"
-                onClick={()=>navigator.clipboard.writeText(copyAsGrid(generated, 6))}
-                style={{margin:'8px 0'}}
-                title="Salin sebagai grid 6 kolom (tab-delimited)"
-              >
-                Copy Semua
-              </button>
-
-              <div className="codegrid">
-                {generated.map((g,idx)=>(
-                  <div key={idx} className="codeitem" title={`${g.code} (${shortK(g.amount)})`}>
-                    <span className="code">{g.code}</span>
-                    <span className="amt">{shortK(g.amount)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </section>
+      {/* ===== Hasil (blok lebar sendiri) ===== */}
+      {generated.length > 0 && (
+        <section className="card" style={{ marginTop: 16 }}>
+          <h2>Hasil ({generated.length} kode)</h2>
+
+          <div className="result-actions">
+            <button
+              className="btn"
+              onClick={() => navigator.clipboard.writeText(copyAsGrid(generated, 6))}
+              title="Salin sebagai grid 6 kolom (tab-delimited)"
+            >
+              Copy Semua
+            </button>
+          </div>
+
+          <div className="codegrid">
+            {generated.map((g, idx) => (
+              <div key={idx} className="codeitem" title={`${g.code} (${shortK(g.amount)})`}>
+                {g.code}
+                <small className="codeamt">({shortK(g.amount)})</small>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </main>
   );
 }
