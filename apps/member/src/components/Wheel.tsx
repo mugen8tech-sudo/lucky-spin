@@ -2,22 +2,22 @@
 import React, { useMemo } from 'react';
 
 type Props = {
-  segments: number[];
-  rotationDeg: number;          // rotasi total roda, diterapkan ke container .wheel-disk (CSS)
+  segments: number[];           // list nominal (angka)
+  rotationDeg: number;          // rotasi disk (deg) — diterapkan di .wheel-disk
   spinning: boolean;
   spinMs: number;
-  children?: React.ReactNode;   // konten di pusat (ikon/hasil)
-  hubFill?: string;             // warna hub
-  winningIndex?: number | null; // highlight pemenang
+  children?: React.ReactNode;   // konten di pusat
+  hubFill?: string;
+  winningIndex?: number | null; // index pemenang (optional highlight)
 };
 
 type Wedge = {
-  d: string;       // path segmen
-  fill: string;    // warna segmen
-  label: string;   // teks nominal
-  midDeg: number;  // sudut tengah wedge (deg), 0° = atas
-  edgeD: string;   // arc tepi luar
-  idx: number;     // index segmen
+  d: string;        // path segmen
+  fill: string;     // warna segmen
+  label: string;    // label nominal (Rp x.xxx)
+  midDeg: number;   // sudut bisektor wedge (deg), 0° = atas
+  edgeD: string;    // arc tepi luar (untuk glow)
+  idx: number;
 };
 
 export default function Wheel({
@@ -32,12 +32,12 @@ export default function Wheel({
   const N = Math.max(segments.length, 1);
   const step = 360 / N;
 
-  // Geometri dasar
-  const R = 220;               // radius piringan segmen
-  const cx = 250, cy = 250;    // pusat viewBox
-  const textR = R - 55;        // radius teks (posisi label)
+  // Geometri SVG
+  const R = 220;                 // radius piringan segmen
+  const cx = 250, cy = 250;      // pusat viewBox
+  const textR = R - 55;          // radius label
 
-  // Palet warna
+  // Warna segmen
   const colors = useMemo(() => {
     const base = ['#22c55e','#0ea5e9','#f59e0b','#ef4444','#a78bfa','#14b8a6','#eab308','#f43f5e'];
     return Array.from({ length: N }, (_, i) => base[i % base.length]);
@@ -47,7 +47,7 @@ export default function Wheel({
   const items = useMemo<Wedge[]>(() => {
     const arr: Wedge[] = [];
     for (let i = 0; i < N; i++) {
-      // SVG: 0° = ke kanan; kita geser -90° supaya 0° = atas
+      // Shift -90° agar 0° = atas (bukan kanan)
       const start = ((i * step - 90) * Math.PI) / 180;
       const end   = (((i + 1) * step - 90) * Math.PI) / 180;
 
@@ -57,7 +57,7 @@ export default function Wheel({
 
       const d = `M ${cx} ${cy} L ${x1} ${y1} A ${R} ${R} 0 ${largeArc} 1 ${x2} ${y2} Z`;
       const edgeD = `M ${x1} ${y1} A ${R + 3} ${R + 3} 0 ${largeArc} 1 ${x2} ${y2}`;
-      const midDeg = (i + 0.5) * step - 90; // sudut bisektor wedge (0° = atas)
+      const midDeg = (i + 0.5) * step - 90;
 
       arr.push({
         d,
@@ -71,21 +71,18 @@ export default function Wheel({
     return arr;
   }, [N, step, colors, segments]);
 
-  // Kontras hub
   const hubStroke = isDark(hubFill) ? '#1f2937' : '#e5e7eb';
   const pointerCls = winningIndex != null ? 'pointer shake' : 'pointer';
 
   return (
     <div className="wheel-frame">
-      {/* Pointer statis */}
       <div className={pointerCls} />
 
       <div className="wheel">
-        {/* Bezel statis */}
         <div className="bezel-outer" />
         <div className="bezel-inner" />
 
-        {/* Disk berputar via CSS */}
+        {/* Disk berputar */}
         <div
           className="wheel-disk"
           style={{
@@ -94,7 +91,7 @@ export default function Wheel({
           }}
         >
           <svg width="100%" height="100%" viewBox="0 0 500 500" style={{ display: 'block' }}>
-            {/* LAYER 1: wedges */}
+            {/* Wedges */}
             <g className="wedge-layer">
               {items.map((p) => (
                 <g key={`w-${p.idx}`}>
@@ -104,7 +101,7 @@ export default function Wheel({
               ))}
             </g>
 
-            {/* LAYER 2: highlight pemenang */}
+            {/* Highlight pemenang */}
             {typeof winningIndex === 'number' && items[winningIndex] && (
               <g className="winner-layer">
                 <path d={items[winningIndex].d} className="wedge-win-fill" />
@@ -112,34 +109,37 @@ export default function Wheel({
               </g>
             )}
 
-            {/* LAYER 3: label — RADIAL mengikuti wedge + auto FLIP di sisi bawah */}
+            {/* Label — tangen + auto-flip berdasar (rotationDeg + midDeg) */}
             <g className="labels-layer">
               {items.map((p) => {
-                const fs = fitFont(p.label, step, textR, 11, 17);
+                const fontSize = fitFont(p.label, step, textR, 11, 17);
 
-                // Catatan penting:
-                // - Seluruh <svg> ikut berputar karena parent .wheel-disk di-rotate via CSS.
-                // - Jadi penentuan flip TIDAK boleh ikut rotationDeg. Cukup pakai midDeg.
-                // - Jika label berada di bawah (90°..270°), putar 180° agar tetap tegak dibaca.
-                const absMid = normDeg(p.midDeg);
-                const flip = absMid > 90 && absMid < 270 ? 180 : 0;
+                // Sudut akhir label di layar = rotasi disk + sudut wedge
+                const abs = normDeg(rotationDeg + p.midDeg);
+                // Jika di sisi bawah (90..270), balik 180° biar terbaca tegak
+                const flip = abs > 90 && abs < 270 ? 180 : 0;
 
                 return (
                   <g
                     key={`t-${p.idx}`}
-                    transform={
-                      // rotate(midDeg)   -> posisikan basis teks di arah radial (miring seperti wedge)
-                      // translate        -> geser ke radius label
-                      // rotate(flip)     -> balik 180° hanya bila wedge ada di bawah
-                      `translate(${cx} ${cy}) rotate(${p.midDeg}) translate(0 ${-textR}) rotate(${flip})`
-                    }
+                    transform={`translate(${cx} ${cy}) rotate(${p.midDeg}) translate(0 ${-textR}) rotate(${flip})`}
                   >
                     <text
                       className={winningIndex === p.idx ? 'label win-label' : 'label'}
                       textAnchor="middle"
                       dominantBaseline="middle"
                       alignmentBaseline="middle"
-                      fontSize={fs}
+                      fontSize={fontSize}
+                      // inline style untuk pastikan override walau CSS tidak termuat
+                      style={{
+                        fill: '#0f172a',
+                        paintOrder: 'stroke',
+                        stroke: 'rgba(255,255,255,0.75)',
+                        strokeWidth: 0.8,
+                        fontWeight: 500,
+                        letterSpacing: 0.2,
+                        textRendering: 'geometricPrecision',
+                      }}
                     >
                       {p.label}
                     </text>
@@ -148,12 +148,10 @@ export default function Wheel({
               })}
             </g>
 
-            {/* Ring tipis */}
             <circle cx="250" cy="250" r={R + 3} fill="none" stroke="rgba(15,23,42,.55)" strokeWidth="3" />
           </svg>
         </div>
 
-        {/* Hub statis */}
         <div
           className="hub"
           style={{ backgroundColor: hubFill, boxShadow: `inset 0 0 0 5px ${hubStroke}, 0 6px 18px rgba(0,0,0,.45)` }}
@@ -170,11 +168,11 @@ function formatIDR(n: number) {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
 }
 
-// auto-fit ukuran font berdasar chord pada radius label
+// Auto-fit ukuran font berdasarkan chord pada radius label
 function fitFont(label: string, arcDeg: number, r: number, min = 12, max = 20) {
   const arcRad = (Math.PI * arcDeg) / 180;
-  const chord = 2 * r * Math.sin(arcRad / 2);
-  const perChar = 0.62; // ~0.62*fontSize per karakter
+  const chord = 2 * r * Math.sin(arcRad / 2);     // panjang chord
+  const perChar = 0.62;                            // ~0.62 * fontSize per karakter
   const est = (chord * 0.9) / (Math.max(4, label.length) * perChar);
   return Math.max(min, Math.min(max, est));
 }
