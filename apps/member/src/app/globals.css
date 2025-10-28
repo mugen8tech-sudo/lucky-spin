@@ -298,6 +298,12 @@ body {
   .label{ fill:#0b1220; stroke:rgba(255,255,255,.85); }
 }
 
+/* Ikon label mengikuti aturan teks: non-interaktif + kontras */
+.icon-label {
+  pointer-events: none;
+  user-select: none;
+}
+
 /* Pop kecil saat menang (opsional, sudah dipakai komponen) */
 .win-label { animation: win-pop 260ms ease-out 1; font-weight: 700; }
 @keyframes win-pop { 0%{transform:scale(1)} 60%{transform:scale(1.08)} 100%{transform:scale(1)} }
