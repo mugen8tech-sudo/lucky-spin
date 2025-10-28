@@ -188,7 +188,7 @@ export default function Page() {
   return (
     <main className="screen">
       {/* Background effects */}
-      <LightningFX />
+      <div className="bg-gif" aria-hidden />
       <RainFX />
 
       {/* Wheel… (tetap sama) */}
