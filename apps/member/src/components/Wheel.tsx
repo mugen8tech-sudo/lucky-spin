@@ -52,8 +52,8 @@ export default function Wheel({
   const textR = R - LABEL_INSET; // radius label/icon (pakai konsisten)
   const outerR = R + 3;
 
-  // Palet
-  const palette = ['#22c55e','#0ea5e9','#f59e0b','#ef4444','#a78bfa','#14b8a6','#eab308','#f43f5e'];
+  const BLUE_LIGHT = '#38bdf8'; // sky-400
+  const BLUE_DARK  = '#0284c7'; // sky-600
 
   // Normalisasi segmen input
   const norm = useMemo(() => {
@@ -80,7 +80,7 @@ export default function Wheel({
 
       const d = `M ${cx} ${cy} L ${x1} ${y1} A ${R} ${R} 0 ${largeArc} 1 ${x2} ${y2} Z`;
       const edgeD = `M ${x1} ${y1} A ${outerR} ${outerR} 0 ${largeArc} 1 ${x2} ${y2}`;
-      const fill = (s as any).fill ?? palette[i % palette.length];
+      const fill = (i % 2 === 0) ? BLUE_LIGHT : BLUE_DARK;
 
       if ((s as any).mode === 'amount') {
         arr.push({
@@ -206,12 +206,18 @@ export default function Wheel({
                         dominantBaseline="middle"
                         dy="0.35em"
                         fontSize={fontSize}
-                        fill="url(#lux-label-grad)"
-                        stroke="#000"
+                        // warna font putih + outline gelap tipis
+                        fill="#ffffff"
+                        stroke="#000000"
                         strokeWidth={0.6}
                         strokeOpacity={0.45}
                         filter="url(#lux-text-glow)"
-                        style={{ paintOrder: 'stroke', fontWeight: 700, letterSpacing: '.4px' }}
+                        style={{
+                          fontFamily: "'Cinzel', ui-serif, Georgia, serif",
+                          fontWeight: 700,
+                          letterSpacing: '.4px',
+                          paintOrder: 'stroke fill',
+                        }}
                       >
                         {w.label}
                       </text>
