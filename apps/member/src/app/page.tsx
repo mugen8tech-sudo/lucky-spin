@@ -22,7 +22,7 @@ export default function Page() {
   // Wheel
   const [segments, setSegments] = useState<WheelSegmentSpec[]>([
     5000, 10000, 15000, 20000, 25000, 30000, 35000, 50000, 100000, 250000, 500000,
-    { image: '/icons/android.png', size: 54, alt: 'Android Bonus' }  // << ikon PNG
+    { image: '/icons/android.png', size: 60, alt: 'Android Bonus' }  // << ikon PNG
   ]);
   const [spinMs, setSpinMs] = useState(6000);
   const [spinning, setSpinning] = useState(false);
@@ -97,7 +97,7 @@ export default function Page() {
     );
     const nextSegments = hasIcon
       ? wheel.segments
-      : [...wheel.segments, { image: '/icons/android.png', size: 54, alt: 'Android Bonus' }];
+      : [...wheel.segments, { image: '/icons/android.png', size: 60, alt: 'Android Bonus' }];
 
     // set ke state untuk render
     setSegments(nextSegments);
