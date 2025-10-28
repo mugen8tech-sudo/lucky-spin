@@ -3,12 +3,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import RainFX from '../components/RainFX';
 import LightningFX from '../components/LightningFX';
-import Wheel, { type SegmentSpec } from '../components/Wheel';
+import Wheel, { type SegmentSpec as WheelSegmentSpec } from '../components/Wheel';
 
 type ClaimOk = { ok:true; amount:number; wheel:{ segments:number[]; targetIndex:number; spinMs:number } };
 type ClaimErr = { ok:false; reason:'INVALID_CODE'|'ALREADY_USED'|'EXPIRED'|'UNABLE_TO_CLAIM'|'SERVER_ERROR'; detail?:string };
 type ClaimResp = ClaimOk | ClaimErr;
-type SegmentSpec = number | { icon: 'android'; fill?: string; text?: string };
 
 const CONTACT_URL = process.env.NEXT_PUBLIC_CONTACT_URL || '#';
 const HUB_ICON_URL = process.env.NEXT_PUBLIC_HUB_ICON_URL || '/hub-icon.png';
@@ -21,7 +20,7 @@ export default function Page() {
   const [msg, setMsg] = useState<{kind:'error'|'success'; text:string} | null>(null);
 
   // Wheel
-  const [segments, setSegments] = useState<SegmentSpec[]>([
+  const [segments, setSegments] = useState<WheelSegmentSpec[]>([
     5000, 10000, 15000, 20000, 25000, 30000, 35000, 50000, 100000, 250000, 500000,
     { icon: 'android' } // <- dummy wedge ikon
   ]);
@@ -83,7 +82,7 @@ export default function Page() {
     }
 
     const { amount, wheel } = data;
-    setSegments([...wheel.segments, { icon: 'android' }]);
+    setSegments([...wheel.segments, { icon: 'android' } as WheelSegmentSpec]);
     setSpinMs(wheel.spinMs);
 
     // --- hitung target sudut relatif terhadap sudut sekarang
