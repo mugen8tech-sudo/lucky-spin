@@ -285,13 +285,13 @@ body {
 
 /* ===== Label roda: lurus + outline agar kontras di semua warna ===== */
 .label{
-  font-weight: 600;
+  font-weight: 800;
   user-select: none;
   pointer-events: none;
   fill: #0f172a;
   paint-order: stroke fill;
   stroke: rgba(255,255,255,0.80);
-  stroke-width: .8px;
+  stroke-width: .6px;
   text-rendering: geometricPrecision;
 }
 @media (prefers-color-scheme: dark){
