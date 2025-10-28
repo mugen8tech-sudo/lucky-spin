@@ -48,7 +48,7 @@ export default function Wheel({
   // Geometri
   const cx = 250, cy = 250;
   const R = 238;
-  const LABEL_INSET = 80;        // label & ikon agak ke dalam
+  const LABEL_INSET = 75;        // label & ikon agak ke dalam
   const textR = R - LABEL_INSET; // radius label/icon (pakai konsisten)
   const outerR = R + 3;
 
