@@ -299,9 +299,9 @@ body {
 }
 
 /* Ikon label mengikuti aturan teks: non-interaktif + kontras */
-.icon-label {
-  pointer-events: none;
-  user-select: none;
+.icon-label image {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
 }
 
 /* Pop kecil saat menang (opsional, sudah dipakai komponen) */
