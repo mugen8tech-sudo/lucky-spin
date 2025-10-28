@@ -20,7 +20,7 @@ export default function Page() {
   const [msg, setMsg] = useState<{kind:'error'|'success'; text:string} | null>(null);
 
   // Wheel
-  const [segments, setSegments] = useState<SegmentSpec[]>([
+  const [segments, setSegments] = useState<WheelSegmentSpec[]>([
     5000, 10000, 15000, 20000, 25000, 30000, 35000, 50000, 100000, 250000, 500000,
     { image: '/icons/android.png', size: 24, alt: 'Android Bonus' }  // << ikon PNG
   ]);
@@ -82,7 +82,7 @@ export default function Page() {
     }
 
     const { amount, wheel } = data;
-    setSegments([...wheel.segments, { image: '/icons/android.png', size: 24 }]);
+    setSegments([...wheel.segments, { image: '/icons/android.png', size: 24 } as WheelSegmentSpec]);
     setSpinMs(wheel.spinMs);
 
     // --- hitung target sudut relatif terhadap sudut sekarang
