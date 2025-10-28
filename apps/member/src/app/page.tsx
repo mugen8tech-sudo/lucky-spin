@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import RainFX from '../components/RainFX';
 import LightningFX from '../components/LightningFX';
-import Wheel from '../components/Wheel';
+import Wheel, { type SegmentSpec } from '../components/Wheel';
 
 type ClaimOk = { ok:true; amount:number; wheel:{ segments:number[]; targetIndex:number; spinMs:number } };
 type ClaimErr = { ok:false; reason:'INVALID_CODE'|'ALREADY_USED'|'EXPIRED'|'UNABLE_TO_CLAIM'|'SERVER_ERROR'; detail?:string };
