@@ -149,7 +149,7 @@ export default function Wheel({
                 const base =
                   `translate(${cx} ${cy}) ` +
                   `rotate(${rotateForPosition}) ` +
-                  `translate(0 ${-textR})`
+                  `translate(0 ${-textR})` +
                   `rotate(${rotateForTangent + flip})`;
 
                 if (w.mode === 'amount') {
@@ -189,7 +189,7 @@ export default function Wheel({
                   const base =
                     `translate(${cx} ${cy}) ` +
                     `rotate(${rotateForPosition}) ` +
-                    `translate(0 ${-textR})`
+                    `translate(0 ${-textR})` +
                     `rotate(${rotateForAlong + flip})`; // <-- tidak lagi 90°
 
                   return (
