@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 
 /** Segment bisa angka (credit) atau ikon khusus. */
-type SegmentSpec =
+export type SegmentSpec =
   | number
   | {
       icon: 'android';   // jenis ikon (saat ini: android)
