@@ -52,6 +52,7 @@ export default function Wheel({
   const textR = R - LABEL_INSET; // radius label/icon (pakai konsisten)
   const outerR = R + 3;
 
+  // --- Colors: 2-biru alternating ---
   const BLUE_LIGHT = '#38bdf8'; // sky-400
   const BLUE_DARK  = '#0284c7'; // sky-600
 
@@ -154,6 +155,25 @@ export default function Wheel({
               <filter id="lux-text-glow">
                 <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="#000" floodOpacity=".55"/>
               </filter>
+
+              {/* === Stone texture (fractal noise) === */}
+              <filter id="stone-noise" x="-10%" y="-10%" width="120%" height="120%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" seed="11" result="turb" />
+                <feColorMatrix in="turb" type="saturate" values="0" result="mono"/>
+                <feComponentTransfer in="mono">
+                  <feFuncR type="gamma" amplitude="1" exponent="1.2" offset="0"/>
+                  <feFuncG type="gamma" amplitude="1" exponent="1.2" offset="0"/>
+                  <feFuncB type="gamma" amplitude="1" exponent="1.2" offset="0"/>
+                  <feFuncA type="table" tableValues="0 0 .10 .16 .22 .28 .34 .40 .46 .52"/>
+                </feComponentTransfer>
+              </filter>
+
+              {/* clipPath untuk masing-masing wedge */}
+              {wedges.map(w => (
+                <clipPath key={`clip-${w.idx}`} id={`clip-${w.idx}`} clipPathUnits="userSpaceOnUse">
+                  <path d={w.d}/>
+                </clipPath>
+              ))}
             </defs>
 
             {/* Wedges */}
@@ -162,6 +182,21 @@ export default function Wheel({
                 <g key={`w-${w.idx}`}>
                   <path d={w.d} fill={w.fill} />
                   <path d={w.d} fill="none" stroke="rgba(15,23,42,.22)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+                </g>
+              ))}
+            </g>
+
+            {/* Stone texture per wedge (halus) */}
+            <g className="texture-layer" aria-hidden style={{ isolation: 'isolate' as any }}>
+              {wedges.map(w => (
+                <g key={`tex-${w.idx}`} clipPath={`url(#clip-${w.idx})`}>
+                  <rect
+                    x="0" y="0" width="500" height="500"
+                    fill="#808080"
+                    filter="url(#stone-noise)"
+                    opacity=".24"                                /* intensitas corak */
+                    style={{ mixBlendMode: 'overlay', pointerEvents: 'none' }}
+                  />
                 </g>
               ))}
             </g>
@@ -206,7 +241,7 @@ export default function Wheel({
                         dominantBaseline="middle"
                         dy="0.35em"
                         fontSize={fontSize}
-                        // warna font putih + outline gelap tipis
+                        /* teks putih + outline gelap tipis */
                         fill="#ffffff"
                         stroke="#000000"
                         strokeWidth={0.6}
