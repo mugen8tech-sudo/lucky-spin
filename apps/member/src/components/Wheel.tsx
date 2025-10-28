@@ -35,7 +35,7 @@ export default function Wheel({
   // ==== Geometri dasar
   const cx = 250, cy = 250;
   const R = 220;                 // radius wedge
-  const LABEL_INSET = 64;        // <- label lebih ke dalam (semula ~44)
+  const LABEL_INSET = 70;        // <- label lebih ke dalam (semula ~44)
   const textR = R - LABEL_INSET; // radius posisi label
   const outerR = R + 3;          // rim luar
 
