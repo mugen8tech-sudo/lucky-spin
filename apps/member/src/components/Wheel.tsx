@@ -1,23 +1,34 @@
 'use client';
 import React, { useMemo } from 'react';
 
+/** Segment bisa angka (credit) atau ikon khusus. */
+type SegmentSpec =
+  | number
+  | {
+      icon: 'android';   // jenis ikon (saat ini: android)
+      fill?: string;     // opsional: override warna wedge
+      text?: string;     // opsional: caption kecil di bawah ikon (jarang dipakai)
+    };
+
 type Props = {
-  segments: number[];
+  segments: SegmentSpec[];      // contoh: [5000,10000,15000,{icon:'android'}]
   rotationDeg: number;
   spinning: boolean;
   spinMs: number;
-  children?: React.ReactNode;
+  children?: React.ReactNode;   // konten hub
   hubFill?: string;
   winningIndex?: number | null;
 };
 
-type Wedge = {
+type BuiltSeg = {
   idx: number;
   d: string;
   edgeD: string;
   fill: string;
-  label: string;
-  midDegSVG: number; // 0° = kanan (SVG space), -90° = atas
+  mode: 'amount' | 'icon';
+  label: string;          // untuk amount
+  icon?: 'android';       // untuk icon
+  midDegSVG: number;      // bisektor wedge di koordinat SVG (0° = kanan)
 };
 
 export default function Wheel({
@@ -32,23 +43,36 @@ export default function Wheel({
   const N = Math.max(segments.length, 1);
   const step = 360 / N;
 
-  // ==== Geometri dasar
+  // Geometri
   const cx = 250, cy = 250;
-  const R = 220;                 // radius wedge
-  const LABEL_INSET = 70;        // <- label lebih ke dalam (semula ~44)
-  const textR = R - LABEL_INSET; // radius posisi label
-  const outerR = R + 3;          // rim luar
+  const R = 220;                  // radius wedge
+  const LABEL_INSET = 64;         // label sedikit ke dalam
+  const textR = R - LABEL_INSET;  // radius label/icon
+  const outerR = R + 3;
 
-  // ==== Warna
-  const colors = useMemo(() => {
-    const base = ['#22c55e','#0ea5e9','#f59e0b','#ef4444','#a78bfa','#14b8a6','#eab308','#f43f5e'];
-    return Array.from({ length: N }, (_, i) => base[i % base.length]);
-  }, [N]);
+  // Warna dasar
+  const palette = ['#22c55e','#0ea5e9','#f59e0b','#ef4444','#a78bfa','#14b8a6','#eab308','#f43f5e'];
 
-  // ==== Build wedges
-  const wedges = useMemo<Wedge[]>(() => {
-    const arr: Wedge[] = [];
+  // Normalisasi segmen (angka -> amount, objek -> icon)
+  const norm = useMemo(() => {
+    return segments.map<{
+      mode: 'amount' | 'icon';
+      amount?: number;
+      icon?: 'android';
+      fill?: string;
+      text?: string;
+    }>((s) => {
+      if (typeof s === 'number') return { mode: 'amount', amount: s };
+      if ('icon' in s) return { mode: 'icon', icon: s.icon, fill: s.fill, text: s.text };
+      return { mode: 'amount', amount: 0 };
+    });
+  }, [segments]);
+
+  // Bangun wedge
+  const wedges = useMemo<BuiltSeg[]>(() => {
+    const arr: BuiltSeg[] = [];
     for (let i = 0; i < N; i++) {
+      const spec = norm[i];
       const start = i * step - 90;
       const end   = (i + 1) * step - 90;
       const mid   = (i + 0.5) * step - 90;
@@ -60,17 +84,21 @@ export default function Wheel({
       const d = `M ${cx} ${cy} L ${x1} ${y1} A ${R} ${R} 0 ${largeArc} 1 ${x2} ${y2} Z`;
       const edgeD = `M ${x1} ${y1} A ${outerR} ${outerR} 0 ${largeArc} 1 ${x2} ${y2}`;
 
+      const fill = spec.fill ?? palette[i % palette.length];
+
       arr.push({
         idx: i,
         d,
         edgeD,
-        fill: colors[i],
-        label: formatCredit(segments[i]), // <- ganti ke "Credit 10.000"
+        fill,
+        mode: spec.mode,
+        label: spec.mode === 'amount' ? formatCredit(spec.amount ?? 0) : '',
+        icon: spec.mode === 'icon' ? spec.icon : undefined,
         midDegSVG: mid,
       });
     }
     return arr;
-  }, [N, step, colors, segments]);
+  }, [N, step, norm]);
 
   const pointerCls = winningIndex != null ? 'pointer shake' : 'pointer';
   const hubStroke = isDark(hubFill) ? '#1f2937' : '#e5e7eb';
@@ -92,7 +120,7 @@ export default function Wheel({
           }}
         >
           <svg width="100%" height="100%" viewBox="0 0 500 500" shapeRendering="geometricPrecision">
-            {/* Wedges + separator */}
+            {/* Wedges + separator crisp */}
             <g className="wedge-layer" aria-hidden>
               {wedges.map(w => (
                 <g key={`w-${w.idx}`}>
@@ -117,44 +145,50 @@ export default function Wheel({
               </g>
             )}
 
-            {/* LABEL: lurus, miring = tangent wedge, auto-flip agar selalu tegak */}
+            {/* LABEL / ICON: orientasi tangent + auto-flip */}
             <g className="labels-layer">
               {wedges.map(w => {
-                const rotateForPosition = w.midDegSVG + 90;             // arah radial ke bisektor
-                const rotateForTangent = 90;                             // radial -> tangent
+                const rotateForPosition = w.midDegSVG + 90;
+                const rotateForTangent = 90;
                 const abs = normDeg(rotationDeg + rotateForPosition + rotateForTangent);
                 const flip = (abs > 90 && abs < 270) ? 180 : 0;
 
-                const fontSize = fitFontByChord(w.label, step, textR, 16, 24);
+                const baseTransform =
+                  `translate(${cx} ${cy}) ` +
+                  `rotate(${rotateForPosition}) ` +
+                  `translate(0 ${-textR}) ` +
+                  `rotate(${rotateForTangent + flip})`;
 
+                if (w.mode === 'amount') {
+                  const fontSize = fitFontByChord(w.label, step, textR, 12, 20);
+                  return (
+                    <g key={`lab-${w.idx}`} transform={baseTransform}>
+                      <text
+                        className={winningIndex === w.idx ? 'label win-label' : 'label'}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        dy="0.35em"
+                        fontSize={fontSize}
+                        style={{
+                          fill: '#0f172a',
+                          paintOrder: 'stroke',
+                          stroke: 'rgba(255,255,255,0.80)',
+                          strokeWidth: 0.8,
+                          fontWeight: 600,
+                          letterSpacing: 0,
+                          textRendering: 'geometricPrecision',
+                        }}
+                      >
+                        {w.label}
+                      </text>
+                    </g>
+                  );
+                }
+
+                // ICON wedge
                 return (
-                  <g
-                    key={`t-${w.idx}`}
-                    transform={
-                      `translate(${cx} ${cy}) ` +
-                      `rotate(${rotateForPosition}) ` +
-                      `translate(0 ${-textR}) ` +
-                      `rotate(${rotateForTangent + flip})`
-                    }
-                  >
-                    <text
-                      className={winningIndex === w.idx ? 'label win-label' : 'label'}
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      dy="0.35em"
-                      fontSize={fontSize}
-                      style={{
-                        fill: '#0f172a',
-                        paintOrder: 'stroke',
-                        stroke: 'rgba(255,255,255,0.80)',
-                        strokeWidth: 0.8,
-                        fontWeight: 600,
-                        letterSpacing: 0,
-                        textRendering: 'geometricPrecision',
-                      }}
-                    >
-                      {w.label}
-                    </text>
+                  <g key={`ico-${w.idx}`} transform={baseTransform} className="icon-label">
+                    <AndroidPhoneIcon size={22} />
                   </g>
                 );
               })}
@@ -185,6 +219,22 @@ export default function Wheel({
   );
 }
 
+/* ===== Ikon sederhana: "hp Android" (smartphone hijau ala Android) ===== */
+function AndroidPhoneIcon({ size = 22 }: { size?: number }) {
+  const s = size;
+  const r = 3; // radius sudut body
+  return (
+    <svg width={s} height={s} viewBox="-14 -18 28 36" aria-hidden focusable="false">
+      {/* body phone */}
+      <rect x={-10} y={-16} width={20} height={32} rx={r} ry={r}
+            fill="#3DDC84" stroke="rgba(15,23,42,.65)" strokeWidth={1.8} />
+      {/* speaker & tombol home */}
+      <rect x={-4} y={-13.5} width={8} height={1.8} rx={0.9} fill="rgba(15,23,42,.85)" />
+      <circle cx={0} cy={12} r={1.7} fill="rgba(15,23,42,.85)" />
+    </svg>
+  );
+}
+
 /* ===== Utils ===== */
 
 function polar(cx: number, cy: number, r: number, degSVG: number): [number, number] {
@@ -193,14 +243,13 @@ function polar(cx: number, cy: number, r: number, degSVG: number): [number, numb
 }
 
 function formatCredit(n: number) {
-  // "Credit 10.000" (lokal id-ID, tanpa simbol mata uang)
   return `Credit ${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(n)}`;
 }
 
 function fitFontByChord(label: string, arcDeg: number, r: number, min = 12, max = 20) {
   const arcRad = (Math.PI * arcDeg) / 180;
   const chord = 2 * r * Math.sin(arcRad / 2);
-  const perChar = 0.62; // estimasi lebar karakter = 0.62 * fontSize
+  const perChar = 0.62;
   const est = (chord * 0.88) / (Math.max(4, label.length) * perChar);
   return Math.max(min, Math.min(max, est));
 }
