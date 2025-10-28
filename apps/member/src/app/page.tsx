@@ -20,7 +20,7 @@ export default function Page() {
   const [msg, setMsg] = useState<{kind:'error'|'success'; text:string} | null>(null);
 
   // Wheel
-  const [segments, setSegments] = useState<number[]>([5000,10000,15000,20000,30000,50000,100000]);
+  const [segments, setSegments] = useState<number[]>([5000,10000,15000,20000,30000,50000,100000,250000,500000]);
   const [spinMs, setSpinMs] = useState(6000);
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
