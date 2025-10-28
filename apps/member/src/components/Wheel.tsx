@@ -49,7 +49,7 @@ export default function Wheel({
   const cx = 250, cy = 250;
   const R = 238;
   const LABEL_INSET = 74;        // label & ikon agak ke dalam
-  const textR = R - LABEL_INSET; // radius label/icon
+  const textR = R - LABEL_INSET; // radius label/icon (pakai konsisten)
   const outerR = R + 3;
 
   // Palet
@@ -82,7 +82,7 @@ export default function Wheel({
       const edgeD = `M ${x1} ${y1} A ${outerR} ${outerR} 0 ${largeArc} 1 ${x2} ${y2}`;
       const fill = (s as any).fill ?? palette[i % palette.length];
 
-      if (s.mode === 'amount') {
+      if ((s as any).mode === 'amount') {
         arr.push({
           idx: i, d, edgeD, fill, mode: 'amount',
           label: formatCredit((s as any).amount ?? 0),
@@ -120,14 +120,58 @@ export default function Wheel({
           }}
         >
           <svg width="100%" height="100%" viewBox="0 0 500 500" shapeRendering="geometricPrecision">
+            {/* ===== Luxury defs (gradients & filters) ===== */}
+            <defs>
+              {/* Gradient emas untuk ring */}
+              <linearGradient id="lux-gold" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%"  stopColor="#FFF6B7"/>
+                <stop offset="35%" stopColor="#F4DA7A"/>
+                <stop offset="65%" stopColor="#DEBA5A"/>
+                <stop offset="100%" stopColor="#A27C2E"/>
+              </linearGradient>
+
+              {/* Gradient label (mutiara) */}
+              <linearGradient id="lux-label-grad" x1="0" y1="1" x2="0" y2="0">
+                <stop offset="0%"  stopColor="#e6ecf5"/>
+                <stop offset="50%" stopColor="#ffffff"/>
+                <stop offset="100%" stopColor="#dfe7f2"/>
+              </linearGradient>
+
+              {/* Inner shadow halus untuk wedge */}
+              <filter id="lux-inner" x="-20%" y="-20%" width="140%" height="140%">
+                <feOffset dx="0" dy="1" />
+                <feGaussianBlur stdDeviation="2.5" result="b"/>
+                <feComposite in="b" in2="SourceAlpha" operator="out" result="innershadow"/>
+                <feColorMatrix in="innershadow" type="matrix"
+                  values="0 0 0 0 0
+                          0 0 0 0 0
+                          0 0 0 0 0
+                          0 0 0 .45 0"/>
+                <feComposite in="SourceGraphic" />
+              </filter>
+
+              {/* Glow tipis untuk teks */}
+              <filter id="lux-text-glow">
+                <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="#000" floodOpacity=".55"/>
+              </filter>
+            </defs>
+
             {/* Wedges */}
-            <g className="wedge-layer" aria-hidden>
+            <g className="wedge-layer" filter="url(#lux-inner)" aria-hidden>
               {wedges.map(w => (
                 <g key={`w-${w.idx}`}>
                   <path d={w.d} fill={w.fill} />
                   <path d={w.d} fill="none" stroke="rgba(15,23,42,.22)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
                 </g>
               ))}
+            </g>
+
+            {/* Ring emas tipis */}
+            <g aria-hidden>
+              <circle cx={cx} cy={cy} r={R - 0.5} fill="none"
+                      stroke="url(#lux-gold)" strokeWidth="2" opacity=".85" />
+              <circle cx={cx} cy={cy} r={R - 3.5} fill="none"
+                      stroke="rgba(255,255,255,.10)" strokeWidth="1" />
             </g>
 
             {/* Highlight pemenang */}
@@ -153,7 +197,7 @@ export default function Wheel({
                   `rotate(${rotateForTangent + flip})`;
 
                 if (w.mode === 'amount') {
-                  const fontSize = fitFontByChord(w.label, step, R - 64, 16, 24);
+                  const fontSize = fitFontByChord(w.label, step, textR, 16, 24);
                   return (
                     <g key={`lab-${w.idx}`} transform={base}>
                       <text
@@ -162,7 +206,12 @@ export default function Wheel({
                         dominantBaseline="middle"
                         dy="0.35em"
                         fontSize={fontSize}
-                        style={{ fill: '#0f172a', paintOrder: 'stroke', stroke: 'rgba(255,255,255,0.80)', strokeWidth: 0.8, fontWeight: 600 }}
+                        fill="url(#lux-label-grad)"
+                        stroke="#000"
+                        strokeWidth={0.6}
+                        strokeOpacity={0.45}
+                        filter="url(#lux-text-glow)"
+                        style={{ paintOrder: 'stroke', fontWeight: 700, letterSpacing: '.4px' }}
                       >
                         {w.label}
                       </text>
@@ -171,7 +220,7 @@ export default function Wheel({
                 }
 
                 if (w.mode === 'image' && w.image?.src) {
-                  const chord = chordLen(R - 64, step);
+                  const chord = chordLen(textR, step);
                   const auto  = Math.min(36, Math.max(22, chord * 0.52));
                   const size  = w.image.size ?? auto;
                   const half  = size / 2;
