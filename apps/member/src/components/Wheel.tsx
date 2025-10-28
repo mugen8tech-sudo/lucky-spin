@@ -177,15 +177,19 @@ export default function Wheel({
                   const half  = size / 2;
                   const extra = w.image.rotate ?? 0;
 
-                  // base = posisi + kemiringan tangent + auto-flip (sudah sama seperti label)
+                  // posisi radial (ke bisektor)
+                  const rotateForPosition = w.midDegSVG + 90;
+                  // rotasi agar sejajar TANGENT, sama seperti label
+                  const rotateForTangent  = 90;
+                  // auto-flip biar tetap “tegak” di sisi kiri roda (opsional)
+                  const abs  = normDeg(rotationDeg + rotateForPosition + rotateForTangent);
+                  const flip = (abs > 90 && abs < 270) ? 180 : 0;
+
                   const base =
                     `translate(${cx} ${cy}) ` +
-                    `rotate(${w.midDegSVG + 90}) ` +
-                    `translate(0 ${-(R - 64)}) ` +
-                    `rotate(${90 + (
-                      (normDeg(rotationDeg + (w.midDegSVG + 90) + 90) > 90 &&
-                       normDeg(rotationDeg + (w.midDegSVG + 90) + 90) < 270) ? 180 : 0
-                    )})`;
+                    `rotate(${rotateForPosition}) ` +
+                    `translate(0 ${-(R - 64)}) ` + // radius label/icon
+                    `rotate(${rotateForTangent + flip})`;
 
                   return (
                     <g key={`img-${w.idx}`} transform={base} className="icon-label">
