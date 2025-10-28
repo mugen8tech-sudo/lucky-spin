@@ -328,3 +328,15 @@ body {
   85%  { transform: translateX(-50%) rotate(3deg); }
   100% { transform: translateX(-50%) rotate(0deg); }
 }
+
+/* Background GIF */
+.bg-gif{
+  position: fixed;
+  inset: 0;
+  background-image: url("/bg.gif"); /* taruh file di /public/bg.gif */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 0;            /* paling belakang */
+  pointer-events: none;  /* klik tembus */
+}
