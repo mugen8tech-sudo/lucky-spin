@@ -82,7 +82,7 @@ export default function Page() {
     }
 
     const { amount, wheel } = data;
-    setSegments([...wheel.segments, { image: '/icons/android.png', size: 24 } as WheelSegmentSpec]);
+    setSegments([...wheel.segments, { image: '/icons/android.png', size: 32 } as WheelSegmentSpec]);
     setSpinMs(wheel.spinMs);
 
     // --- hitung target sudut relatif terhadap sudut sekarang
