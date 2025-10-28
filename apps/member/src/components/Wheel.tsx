@@ -7,11 +7,11 @@ export type SegmentSpec =
   | {
       icon: 'android';   // jenis ikon (saat ini: android)
       fill?: string;     // opsional: override warna wedge
-      text?: string;     // opsional: caption kecil di bawah ikon (jarang dipakai)
+      text?: string;     // opsional: caption kecil
     };
 
 type Props = {
-  segments: SegmentSpec[];      // contoh: [5000,10000,15000,{icon:'android'}]
+  segments: SegmentSpec[];      // <- penting: union, bukan number[]
   rotationDeg: number;
   spinning: boolean;
   spinMs: number;
@@ -28,7 +28,7 @@ type BuiltSeg = {
   mode: 'amount' | 'icon';
   label: string;          // untuk amount
   icon?: 'android';       // untuk icon
-  midDegSVG: number;      // bisektor wedge di koordinat SVG (0° = kanan)
+  midDegSVG: number;      // bisektor (0° = kanan pada SVG space)
 };
 
 export default function Wheel({
@@ -46,14 +46,14 @@ export default function Wheel({
   // Geometri
   const cx = 250, cy = 250;
   const R = 220;                  // radius wedge
-  const LABEL_INSET = 64;         // label sedikit ke dalam
+  const LABEL_INSET = 64;         // label agak ke dalam
   const textR = R - LABEL_INSET;  // radius label/icon
   const outerR = R + 3;
 
-  // Warna dasar
+  // Palet
   const palette = ['#22c55e','#0ea5e9','#f59e0b','#ef4444','#a78bfa','#14b8a6','#eab308','#f43f5e'];
 
-  // Normalisasi segmen (angka -> amount, objek -> icon)
+  // Normalisasi segmen
   const norm = useMemo(() => {
     return segments.map<{
       mode: 'amount' | 'icon';
@@ -63,12 +63,12 @@ export default function Wheel({
       text?: string;
     }>((s) => {
       if (typeof s === 'number') return { mode: 'amount', amount: s };
-      if ('icon' in s) return { mode: 'icon', icon: s.icon, fill: s.fill, text: s.text };
+      if (s && typeof s === 'object' && 'icon' in s) return { mode: 'icon', icon: s.icon, fill: s.fill, text: s.text };
       return { mode: 'amount', amount: 0 };
     });
   }, [segments]);
 
-  // Bangun wedge
+  // Bangun wedges
   const wedges = useMemo<BuiltSeg[]>(() => {
     const arr: BuiltSeg[] = [];
     for (let i = 0; i < N; i++) {
@@ -83,7 +83,6 @@ export default function Wheel({
 
       const d = `M ${cx} ${cy} L ${x1} ${y1} A ${R} ${R} 0 ${largeArc} 1 ${x2} ${y2} Z`;
       const edgeD = `M ${x1} ${y1} A ${outerR} ${outerR} 0 ${largeArc} 1 ${x2} ${y2}`;
-
       const fill = spec.fill ?? palette[i % palette.length];
 
       arr.push({
@@ -120,7 +119,7 @@ export default function Wheel({
           }}
         >
           <svg width="100%" height="100%" viewBox="0 0 500 500" shapeRendering="geometricPrecision">
-            {/* Wedges + separator crisp */}
+            {/* Wedges */}
             <g className="wedge-layer" aria-hidden>
               {wedges.map(w => (
                 <g key={`w-${w.idx}`}>
@@ -145,7 +144,7 @@ export default function Wheel({
               </g>
             )}
 
-            {/* LABEL / ICON: orientasi tangent + auto-flip */}
+            {/* Label / Icon — tangent + auto-flip */}
             <g className="labels-layer">
               {wedges.map(w => {
                 const rotateForPosition = w.midDegSVG + 90;
@@ -156,11 +155,11 @@ export default function Wheel({
                 const baseTransform =
                   `translate(${cx} ${cy}) ` +
                   `rotate(${rotateForPosition}) ` +
-                  `translate(0 ${-textR}) ` +
+                  `translate(0 ${-(R - 64)}) ` +  // pakai textR
                   `rotate(${rotateForTangent + flip})`;
 
                 if (w.mode === 'amount') {
-                  const fontSize = fitFontByChord(w.label, step, textR, 12, 20);
+                  const fontSize = fitFontByChord(w.label, step, R - 64, 12, 20);
                   return (
                     <g key={`lab-${w.idx}`} transform={baseTransform}>
                       <text
@@ -185,7 +184,6 @@ export default function Wheel({
                   );
                 }
 
-                // ICON wedge
                 return (
                   <g key={`ico-${w.idx}`} transform={baseTransform} className="icon-label">
                     <AndroidPhoneIcon size={22} />
@@ -194,7 +192,7 @@ export default function Wheel({
               })}
             </g>
 
-            {/* Rim luar */}
+            {/* Rim */}
             <circle
               cx={cx}
               cy={cy}
@@ -207,7 +205,7 @@ export default function Wheel({
           </svg>
         </div>
 
-        {/* Hub (tetap) */}
+        {/* Hub */}
         <div
           className="hub"
           style={{ backgroundColor: hubFill, boxShadow: `inset 0 0 0 5px ${hubStroke}, 0 6px 18px rgba(0,0,0,.45)` }}
@@ -219,16 +217,13 @@ export default function Wheel({
   );
 }
 
-/* ===== Ikon sederhana: "hp Android" (smartphone hijau ala Android) ===== */
+/* ===== Ikon Android sederhana ===== */
 function AndroidPhoneIcon({ size = 22 }: { size?: number }) {
-  const s = size;
-  const r = 3; // radius sudut body
+  const s = size, r = 3;
   return (
     <svg width={s} height={s} viewBox="-14 -18 28 36" aria-hidden focusable="false">
-      {/* body phone */}
       <rect x={-10} y={-16} width={20} height={32} rx={r} ry={r}
             fill="#3DDC84" stroke="rgba(15,23,42,.65)" strokeWidth={1.8} />
-      {/* speaker & tombol home */}
       <rect x={-4} y={-13.5} width={8} height={1.8} rx={0.9} fill="rgba(15,23,42,.85)" />
       <circle cx={0} cy={12} r={1.7} fill="rgba(15,23,42,.85)" />
     </svg>
@@ -236,16 +231,13 @@ function AndroidPhoneIcon({ size = 22 }: { size?: number }) {
 }
 
 /* ===== Utils ===== */
-
 function polar(cx: number, cy: number, r: number, degSVG: number): [number, number] {
   const rad = (degSVG * Math.PI) / 180;
   return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
 }
-
 function formatCredit(n: number) {
   return `Credit ${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(n)}`;
 }
-
 function fitFontByChord(label: string, arcDeg: number, r: number, min = 12, max = 20) {
   const arcRad = (Math.PI * arcDeg) / 180;
   const chord = 2 * r * Math.sin(arcRad / 2);
@@ -253,7 +245,6 @@ function fitFontByChord(label: string, arcDeg: number, r: number, min = 12, max 
   const est = (chord * 0.88) / (Math.max(4, label.length) * perChar);
   return Math.max(min, Math.min(max, est));
 }
-
 function isDark(hex: string) {
   const m = hex.replace('#', '');
   const r = parseInt(m.slice(0, 2), 16) || 0;
@@ -262,7 +253,6 @@ function isDark(hex: string) {
   const L = 0.2126 * r + 0.7152 * g + 0.0722 * b;
   return L < 128;
 }
-
 function normDeg(d: number) {
   return ((d % 360) + 360) % 360;
 }
