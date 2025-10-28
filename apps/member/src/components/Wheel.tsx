@@ -1,15 +1,15 @@
 'use client';
 import React, { useMemo } from 'react';
 
-/** Segment bisa angka (credit), atau gambar ikon untuk wedge. */
+/** Segment bisa angka (credit) atau gambar ikon (PNG/SVG di /public). */
 export type SegmentSpec =
   | number
   | {
-      image: string;        // path PNG/SVG di /public, contoh: '/icons/android-badge.png'
-      fill?: string;        // warna wedge opsional
-      size?: number;        // override px jika ingin fix (kalau tidak, otomatis)
-      alt?: string;         // alt text opsional
-      rotate?: number;      // rotasi tambahan pada ikon (derajat)
+      image: string;        // contoh: '/icons/android-badge.png'
+      fill?: string;        // override warna wedge (opsional)
+      size?: number;        // px (opsional; kalau tidak, auto)
+      alt?: string;         // alt text (opsional)
+      rotate?: number;      // rotasi tambahan ikon (deg)
     };
 
 type Props = {
@@ -28,9 +28,9 @@ type BuiltSeg = {
   edgeD: string;
   fill: string;
   mode: 'amount' | 'image';
-  label: string;       // untuk amount
-  image?: { src: string; size?: number; alt?: string; rotate?: number }; // untuk image
-  midDegSVG: number;   // bisektor wedge (0°=kanan pada ruang SVG)
+  label: string;   // untuk mode 'amount'
+  image?: { src: string; size?: number; alt?: string; rotate?: number };
+  midDegSVG: number; // 0°=kanan (ruang SVG)
 };
 
 export default function Wheel({
@@ -47,25 +47,25 @@ export default function Wheel({
 
   // Geometri
   const cx = 250, cy = 250;
-  const R = 220;                 // radius wedge
-  const LABEL_INSET = 64;        // label sedikit ke dalam
+  const R = 220;
+  const LABEL_INSET = 64;        // label & ikon agak ke dalam
   const textR = R - LABEL_INSET; // radius label/icon
   const outerR = R + 3;
 
   // Palet
   const palette = ['#22c55e','#0ea5e9','#f59e0b','#ef4444','#a78bfa','#14b8a6','#eab308','#f43f5e'];
 
-  // Normalisasi segmen
+  // Normalisasi segmen input
   const norm = useMemo(() => {
     return segments.map((s) => {
       if (typeof s === 'number') return { mode: 'amount' as const, amount: s };
-      if (s && typeof s === 'object' && 'image' in s) {
+      if (s && typeof s === 'object' && 'image' in s)
         return { mode: 'image' as const, image: s.image, size: s.size, alt: s.alt, rotate: s.rotate, fill: s.fill };
-      }
       return { mode: 'amount' as const, amount: 0 };
     });
   }, [segments]);
 
+  // Build wedges
   const wedges = useMemo<BuiltSeg[]>(() => {
     const arr: BuiltSeg[] = [];
     for (let i = 0; i < N; i++) {
@@ -125,19 +125,12 @@ export default function Wheel({
               {wedges.map(w => (
                 <g key={`w-${w.idx}`}>
                   <path d={w.d} fill={w.fill} />
-                  <path
-                    d={w.d}
-                    fill="none"
-                    stroke="rgba(15,23,42,.22)"
-                    strokeWidth="1.5"
-                    vectorEffect="non-scaling-stroke"
-                    strokeLinejoin="round"
-                  />
+                  <path d={w.d} fill="none" stroke="rgba(15,23,42,.22)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
                 </g>
               ))}
             </g>
 
-            {/* Winner glow */}
+            {/* Highlight pemenang */}
             {typeof winningIndex === 'number' && wedges[winningIndex] && (
               <g className="winner-layer" aria-hidden>
                 <path d={wedges[winningIndex].d} className="wedge-win-fill" />
@@ -145,22 +138,22 @@ export default function Wheel({
               </g>
             )}
 
-            {/* Label & Icon */}
+            {/* Label & Ikon (tangent + auto-flip) */}
             <g className="labels-layer">
               {wedges.map(w => {
-                const rotateForPosition = w.midDegSVG + 90; // arah radial ke bisektor
-                const rotateForTangent = 90;                 // radial -> tangent
+                const rotateForPosition = w.midDegSVG + 90; // radial ke bisektor
+                const rotateForTangent  = 90;                // radial → tangent
                 const abs = normDeg(rotationDeg + rotateForPosition + rotateForTangent);
                 const flip = (abs > 90 && abs < 270) ? 180 : 0;
 
                 const base =
                   `translate(${cx} ${cy}) ` +
                   `rotate(${rotateForPosition}) ` +
-                  `translate(0 ${-textR}) ` +
+                  `translate(0 ${-(R - 64)}) ` + // = textR
                   `rotate(${rotateForTangent + flip})`;
 
                 if (w.mode === 'amount') {
-                  const fontSize = fitFontByChord(w.label, step, textR, 12, 20);
+                  const fontSize = fitFontByChord(w.label, step, R - 64, 12, 20);
                   return (
                     <g key={`lab-${w.idx}`} transform={base}>
                       <text
@@ -169,15 +162,7 @@ export default function Wheel({
                         dominantBaseline="middle"
                         dy="0.35em"
                         fontSize={fontSize}
-                        style={{
-                          fill: '#0f172a',
-                          paintOrder: 'stroke',
-                          stroke: 'rgba(255,255,255,0.80)',
-                          strokeWidth: 0.8,
-                          fontWeight: 600,
-                          letterSpacing: 0,
-                          textRendering: 'geometricPrecision',
-                        }}
+                        style={{ fill: '#0f172a', paintOrder: 'stroke', stroke: 'rgba(255,255,255,0.80)', strokeWidth: 0.8, fontWeight: 600 }}
                       >
                         {w.label}
                       </text>
@@ -185,21 +170,16 @@ export default function Wheel({
                   );
                 }
 
-                // ==== IMAGE WEDGE (dibesarkan & miring mengikuti wedge) ====
+                // Ikon gambar — dibesarkan & ikut miring
                 if (w.mode === 'image' && w.image?.src) {
-                  // skala otomatis berdasar chord → lebih besar dari sebelumnya
-                  const chord = chordLen(textR, step);
-                  const auto = Math.min(36, Math.max(22, chord * 0.52)); // ← ukuran otomatis (≈+35%)
-                  const size = w.image.size ?? auto;
-                  const half = size / 2;
+                  const chord = chordLen(R - 64, step);
+                  const auto  = Math.min(36, Math.max(22, chord * 0.52)); // ~lebih besar 35% dari versi awal
+                  const size  = w.image.size ?? auto;
+                  const half  = size / 2;
                   const extra = w.image.rotate ?? 0;
 
                   return (
-                    <g
-                      key={`img-${w.idx}`}
-                      transform={`${base} rotate(${extra})`}
-                      className="icon-label"
-                    >
+                    <g key={`img-${w.idx}`} transform={`${base} rotate(${extra})`} className="icon-label">
                       <image
                         href={w.image.src}
                         x={-half}
@@ -219,24 +199,13 @@ export default function Wheel({
               })}
             </g>
 
-            {/* Rim */}
-            <circle
-              cx={cx}
-              cy={cy}
-              r={outerR}
-              fill="none"
-              stroke="rgba(15,23,42,.55)"
-              strokeWidth="3"
-              vectorEffect="non-scaling-stroke"
-            />
+            {/* Rim luar */}
+            <circle cx={cx} cy={cy} r={outerR} fill="none" stroke="rgba(15,23,42,.55)" strokeWidth="3" vectorEffect="non-scaling-stroke" />
           </svg>
         </div>
 
         {/* Hub */}
-        <div
-          className="hub"
-          style={{ backgroundColor: hubFill, boxShadow: `inset 0 0 0 5px ${hubStroke}, 0 6px 18px rgba(0,0,0,.45)` }}
-        >
+        <div className="hub" style={{ backgroundColor: hubFill, boxShadow: `inset 0 0 0 5px ${hubStroke}, 0 6px 18px rgba(0,0,0,.45)` }}>
           <div className="center-ui">{children}</div>
         </div>
       </div>
