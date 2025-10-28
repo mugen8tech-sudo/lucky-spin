@@ -27,13 +27,17 @@ export default function Page() {
   const [spinMs, setSpinMs] = useState(6000);
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
+  const [claiming, setClaiming] = useState(false);
 
   // Result
   const [prize, setPrize] = useState<number | null>(null);
   const [winningIndex, setWinningIndex] = useState<number | null>(null);
   
   const showResult = prize != null;
-  const disabled = useMemo(()=> spinning || !code.trim(), [spinning, code]);
+  const disabled = useMemo(
+    () => claiming || spinning || !code.trim(),
+    [claiming, spinning, code]
+  );
 
   // Lock scroll saat panel/modal tampil (nyaman di mobile)
   useEffect(()=>{
@@ -48,6 +52,7 @@ export default function Page() {
     setMsg(null);
     setPrize(null);
     setWinningIndex(null);
+    setClaiming(true); // <-- mulai loading
 
     let res: Response | null = null;
     try {
@@ -57,19 +62,22 @@ export default function Page() {
         body: JSON.stringify({ code: code.trim() })
       });
     } catch {
+      setClaiming(false); // <-- stop loading
       setMsg({kind:'error', text:'Koneksi bermasalah. Coba lagi.'});
       return;
     }
 
     let data: ClaimResp;
     try {
-      data = (await res!.json()) as ClaimResp;
+      data = await res!.json();
     } catch {
-      setMsg({ kind: 'error', text: 'Respon tidak valid dari server.' });
+      setClaiming(false); // <-- stop loading
+      setMsg({ kind:'error', text:'Respon tidak valid dari server.' });
       return;
     }
 
     if (!data.ok) {
+      setClaiming(false); // <-- stop loading
       const reasonMap: Record<ClaimErr['reason'], string> = {
         INVALID_CODE: 'Kode tidak ditemukan.',
         ALREADY_USED: 'Kode sudah pernah dipakai.',
@@ -94,6 +102,8 @@ export default function Page() {
     // set ke state untuk render
     setSegments(nextSegments);
     setSpinMs(wheel.spinMs);
+    setClaiming(false);       // <-- stop loading (panel akan ditutup sesaat lagi)
+    setShowPanel(false);      // lanjut animasi spin
 
     // === gunakan panjang 'nextSegments' (bukan wheel.segments) untuk kalibrasi sudut
     const N = nextSegments.length;
