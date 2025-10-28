@@ -195,7 +195,7 @@ export default function Wheel({
                     x="0" y="0" width="500" height="500"
                     fill="#ffffff"
                     filter="url(#stone-noise)"
-                    opacity=".40"                                       // naikkan kalau mau lebih kelihatan
+                    opacity=".78"                                       // naikkan kalau mau lebih kelihatan
                     style={{ mixBlendMode: 'soft-light', pointerEvents: 'none' }}
                   />
                   {/* Layer 2: urat gelap tipis (diputar sedikit) */}
@@ -204,7 +204,7 @@ export default function Wheel({
                     fill="#000000"
                     filter="url(#stone-noise)"
                     transform="rotate(35 250 250)"
-                    opacity=".12"
+                    opacity=".42"
                     style={{ mixBlendMode: 'multiply', pointerEvents: 'none' }}
                   />
                 </g>
