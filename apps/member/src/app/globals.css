@@ -202,7 +202,7 @@ body {
   inset: 0;
   pointer-events: none;
   overflow: hidden;
-  z-index: 5; /* di atas wheel & hujan */
+  z-index: 2; /* di atas wheel & hujan */
 }
 
 /* Flash radial (dipakai kedua layer) */
