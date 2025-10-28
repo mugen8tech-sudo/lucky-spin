@@ -242,7 +242,7 @@ export default function Wheel({
                   `rotate(${rotateForTangent + flip})`;
 
                 if (w.mode === 'amount') {
-                  const fontSize = fitFontByChord(w.label, step, textR, 17, 25);
+                  const fontSize = fitFontByChord(w.label, step, textR, 14, 22);
                   return (
                     <g key={`lab-${w.idx}`} transform={base}>
                       <text
