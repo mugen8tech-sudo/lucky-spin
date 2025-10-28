@@ -123,6 +123,21 @@ export default function Wheel({
           <svg width="100%" height="100%" viewBox="0 0 500 500" shapeRendering="geometricPrecision">
             {/* ===== Luxury defs (gradients & filters) ===== */}
             <defs>
+              {/* === Rim dots (blue glow) === */}
+              <radialGradient id="dot-blue-core" cx="50%" cy="50%" r="50%">
+                <stop offset="0%"  stopColor="#e0f2fe"/>
+                <stop offset="55%" stopColor="#38bdf8"/>
+                <stop offset="100%" stopColor="#0ea5e9"/>
+              </radialGradient>
+
+              <filter id="dot-blue-glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="b"/>
+                <feMerge>
+                  <feMergeNode in="b"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+              
               {/* Gradient emas untuk ring */}
               <linearGradient id="lux-gold" x1="0" y1="0" x2="1" y2="1">
                 <stop offset="0%"  stopColor="#FFF6B7"/>
@@ -217,6 +232,26 @@ export default function Wheel({
                       stroke="url(#lux-gold)" strokeWidth="2" opacity=".85" />
               <circle cx={cx} cy={cy} r={R - 3.5} fill="none"
                       stroke="rgba(255,255,255,.10)" strokeWidth="1" />
+            </g>
+
+            {/* Rim dots at each wedge midpoint */}
+            <g className="rim-dots" aria-hidden>
+              {wedges.map((w, i) => {
+                const isWin = typeof winningIndex === 'number' && winningIndex === i;
+                const dotR = R - 4; // posisi radial titik (sedikit di dalam rim)
+                const base =
+                  `translate(${cx} ${cy}) rotate(${w.midDegSVG + 90}) translate(0 ${-dotR})`;
+
+                return (
+                  <g key={`dot-${i}`} transform={base} filter="url(#dot-blue-glow)">
+                    {/* glow halos */}
+                    <circle r={isWin ? 12 : 8} fill="#38bdf8" opacity={isWin ? 0.20 : 0.12}/>
+                    <circle r={isWin ? 8.5 : 6} fill="#0ea5e9" opacity={isWin ? 0.22 : 0.14}/>
+                    {/* bright core */}
+                    <circle r={isWin ? 3.6 : 2.6} fill="url(#dot-blue-core)"/>
+                  </g>
+                );
+              })}
             </g>
 
             {/* Highlight pemenang */}
