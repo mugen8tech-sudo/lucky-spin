@@ -188,6 +188,7 @@ export default function Page() {
   return (
     <main className="screen">
       {/* Background effects */}
+      <LightningFX />
       <RainFX />
 
       {/* Wheel… (tetap sama) */}
