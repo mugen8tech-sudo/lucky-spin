@@ -125,7 +125,7 @@ export default function Wheel({
                 const abs = normDeg(rotationDeg + rotateForPosition + rotateForTangent);
                 const flip = (abs > 90 && abs < 270) ? 180 : 0;
 
-                const fontSize = fitFontByChord(w.label, step, textR, 12, 20);
+                const fontSize = fitFontByChord(w.label, step, textR, 16, 24);
 
                 return (
                   <g
