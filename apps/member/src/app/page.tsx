@@ -20,9 +20,9 @@ export default function Page() {
   const [msg, setMsg] = useState<{kind:'error'|'success'; text:string} | null>(null);
 
   // Wheel
-  const [segments, setSegments] = useState<WheelSegmentSpec[]>([
+  const [segments, setSegments] = useState<SegmentSpec[]>([
     5000, 10000, 15000, 20000, 25000, 30000, 35000, 50000, 100000, 250000, 500000,
-    { icon: 'android' } // <- dummy wedge ikon
+    { image: '/icons/android.png', size: 24, alt: 'Android Bonus' }  // << ikon PNG
   ]);
   const [spinMs, setSpinMs] = useState(6000);
   const [spinning, setSpinning] = useState(false);
@@ -82,7 +82,7 @@ export default function Page() {
     }
 
     const { amount, wheel } = data;
-    setSegments([...wheel.segments, { icon: 'android' } as WheelSegmentSpec]);
+    setSegments([...wheel.segments, { image: '/icons/android.png', size: 24 }]);
     setSpinMs(wheel.spinMs);
 
     // --- hitung target sudut relatif terhadap sudut sekarang
