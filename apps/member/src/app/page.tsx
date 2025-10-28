@@ -82,25 +82,35 @@ export default function Page() {
     }
 
     const { amount, wheel } = data;
-    setSegments([...wheel.segments, { image: '/icons/android.png', size: 54 } as WheelSegmentSpec]);
+
+    // rakit segmen yang akan dipakai render (tambahkan ikon jika belum ada)
+    const hasIcon = wheel.segments.some(
+      (s: any) => s && typeof s === 'object' && 'image' in s
+    );
+    const nextSegments = hasIcon
+      ? wheel.segments
+      : [...wheel.segments, { image: '/icons/android.png', size: 54, alt: 'Android Bonus' }];
+
+    // set ke state untuk render
+    setSegments(nextSegments);
     setSpinMs(wheel.spinMs);
 
-    // --- hitung target sudut relatif terhadap sudut sekarang
-    const N = wheel.segments.length;
+    // === gunakan panjang 'nextSegments' (bukan wheel.segments) untuk kalibrasi sudut
+    const N = nextSegments.length;
     const step = 360 / Math.max(N, 1);
-    const centerDeg = wheel.targetIndex * step + step / 2; // sudut segmen target
-    const targetAngle = norm(360 - centerDeg);             // posisi target di bawah pointer (0°)
+    const centerDeg = wheel.targetIndex * step + step / 2; // pusat wedge pemenang
+    const targetAngle = norm(360 - centerDeg);             // posisikan tepat di bawah pointer (12 o'clock)
 
-    const baseTurns = 6 + Math.floor(Math.random() * 2);   // 6–7 putaran setiap kali
-    const startAngle = norm(rotation);                     // sudut saat ini (0..359)
+    // animasi putar
+    const baseTurns = 6 + Math.floor(Math.random() * 2);   // 6–7 putaran
+    const startAngle = norm(rotation);
     const delta = baseTurns * 360 + norm(targetAngle - startAngle);
 
+    // mulai spin
     setShowPanel(false);
-    // 1) matikan transition → set ke startAngle (instant, no anim)
     setSpinning(false);
     requestAnimationFrame(() => {
       setRotation(startAngle);
-      // 2) di frame berikutnya: nyalakan transition + set ke tujuan (anim jalan panjang)
       requestAnimationFrame(() => {
         setSpinning(true);
         setRotation(startAngle + delta);
