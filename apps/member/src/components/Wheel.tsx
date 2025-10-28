@@ -48,7 +48,7 @@ export default function Wheel({
   // Geometri
   const cx = 250, cy = 250;
   const R = 238;
-  const LABEL_INSET = 74;        // label & ikon agak ke dalam
+  const LABEL_INSET = 76;        // label & ikon agak ke dalam
   const textR = R - LABEL_INSET; // radius label/icon (pakai konsisten)
   const outerR = R + 3;
 
@@ -197,7 +197,7 @@ export default function Wheel({
                   `rotate(${rotateForTangent + flip})`;
 
                 if (w.mode === 'amount') {
-                  const fontSize = fitFontByChord(w.label, step, textR, 20, 28);
+                  const fontSize = fitFontByChord(w.label, step, textR, 17, 25);
                   return (
                     <g key={`lab-${w.idx}`} transform={base}>
                       <text
