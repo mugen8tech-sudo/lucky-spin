@@ -170,16 +170,25 @@ export default function Wheel({
                   );
                 }
 
-                // Ikon gambar — dibesarkan & ikut miring
                 if (w.mode === 'image' && w.image?.src) {
                   const chord = chordLen(R - 64, step);
-                  const auto  = Math.min(36, Math.max(22, chord * 0.52)); // ~lebih besar 35% dari versi awal
+                  const auto  = Math.min(36, Math.max(22, chord * 0.52));
                   const size  = w.image.size ?? auto;
                   const half  = size / 2;
                   const extra = w.image.rotate ?? 0;
 
+                  // base = posisi + kemiringan tangent + auto-flip (sudah sama seperti label)
+                  const base =
+                    `translate(${cx} ${cy}) ` +
+                    `rotate(${w.midDegSVG + 90}) ` +
+                    `translate(0 ${-(R - 64)}) ` +
+                    `rotate(${90 + (
+                      (normDeg(rotationDeg + (w.midDegSVG + 90) + 90) > 90 &&
+                       normDeg(rotationDeg + (w.midDegSVG + 90) + 90) < 270) ? 180 : 0
+                    )})`;
+
                   return (
-                    <g key={`img-${w.idx}`} transform={`${base} rotate(${extra})`} className="icon-label">
+                    <g key={`img-${w.idx}`} transform={base} className="icon-label">
                       <image
                         href={w.image.src}
                         x={-half}
@@ -187,7 +196,8 @@ export default function Wheel({
                         width={size}
                         height={size}
                         preserveAspectRatio="xMidYMid meet"
-                        style={{ pointerEvents: 'none' }}
+                        transform={`rotate(${extra})`}
+                        style={{ pointerEvents: 'none', transformBox: 'fill-box', transformOrigin: '50% 50%' }}
                       >
                         {w.image.alt ? <title>{w.image.alt}</title> : null}
                       </image>
