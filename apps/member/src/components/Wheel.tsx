@@ -1,29 +1,23 @@
 'use client';
 import React, { useMemo } from 'react';
 
-/** Segment bisa angka (credit), ikon vector sederhana, atau gambar eksternal (PNG/SVG). */
+/** Segment bisa angka (credit), atau gambar ikon untuk wedge. */
 export type SegmentSpec =
   | number
   | {
-      icon: 'android';        // ikon vector bawaan (opsional, biar tetap backward-compatible)
-      fill?: string;
-      text?: string;
-      size?: number;          // px (default 22)
-    }
-  | {
-      image: string;          // path gambar, contoh: '/icons/android.png' (public folder)
-      fill?: string;          // warna wedge (opsional)
-      size?: number;          // ukuran sisi px (default otomatis)
-      alt?: string;           // alt text (opsional)
-      rotate?: number;        // rotasi tambahan pada ikon, derajat (opsional)
+      image: string;        // path PNG/SVG di /public, contoh: '/icons/android-badge.png'
+      fill?: string;        // warna wedge opsional
+      size?: number;        // override px jika ingin fix (kalau tidak, otomatis)
+      alt?: string;         // alt text opsional
+      rotate?: number;      // rotasi tambahan pada ikon (derajat)
     };
 
 type Props = {
-  segments: SegmentSpec[];    // << penting: union, bukan number[]
+  segments: SegmentSpec[];
   rotationDeg: number;
   spinning: boolean;
   spinMs: number;
-  children?: React.ReactNode; // konten di hub
+  children?: React.ReactNode;
   hubFill?: string;
   winningIndex?: number | null;
 };
@@ -33,11 +27,10 @@ type BuiltSeg = {
   d: string;
   edgeD: string;
   fill: string;
-  mode: 'amount' | 'icon' | 'image';
-  label: string;      // untuk mode 'amount'
-  icon?: 'android';   // untuk mode 'icon'
-  image?: { src: string; size?: number; alt?: string; rotate?: number }; // untuk mode 'image'
-  midDegSVG: number;  // bisektor wedge (0°=kanan, SVG space)
+  mode: 'amount' | 'image';
+  label: string;       // untuk amount
+  image?: { src: string; size?: number; alt?: string; rotate?: number }; // untuk image
+  midDegSVG: number;   // bisektor wedge (0°=kanan pada ruang SVG)
 };
 
 export default function Wheel({
@@ -55,20 +48,19 @@ export default function Wheel({
   // Geometri
   const cx = 250, cy = 250;
   const R = 220;                 // radius wedge
-  const LABEL_INSET = 64;        // label/ikon agak ke dalam
-  const textR = R - LABEL_INSET; // radius label/ikon
+  const LABEL_INSET = 64;        // label sedikit ke dalam
+  const textR = R - LABEL_INSET; // radius label/icon
   const outerR = R + 3;
 
   // Palet
   const palette = ['#22c55e','#0ea5e9','#f59e0b','#ef4444','#a78bfa','#14b8a6','#eab308','#f43f5e'];
 
-  // Normalisasi segmen input -> struktur internal
+  // Normalisasi segmen
   const norm = useMemo(() => {
     return segments.map((s) => {
       if (typeof s === 'number') return { mode: 'amount' as const, amount: s };
-      if (s && typeof s === 'object') {
-        if ('image' in s) return { mode: 'image' as const, image: s.image, size: s.size, alt: s.alt, rotate: s.rotate, fill: s.fill };
-        if ('icon' in s)  return { mode: 'icon' as const, icon: s.icon, size: s.size, text: s.text, fill: s.fill };
+      if (s && typeof s === 'object' && 'image' in s) {
+        return { mode: 'image' as const, image: s.image, size: s.size, alt: s.alt, rotate: s.rotate, fill: s.fill };
       }
       return { mode: 'amount' as const, amount: 0 };
     });
@@ -96,18 +88,11 @@ export default function Wheel({
           label: formatCredit((s as any).amount ?? 0),
           midDegSVG: mid
         });
-      } else if (s.mode === 'image') {
+      } else {
         arr.push({
           idx: i, d, edgeD, fill, mode: 'image',
           label: '',
           image: { src: (s as any).image, size: (s as any).size, alt: (s as any).alt, rotate: (s as any).rotate },
-          midDegSVG: mid
-        });
-      } else {
-        arr.push({
-          idx: i, d, edgeD, fill, mode: 'icon',
-          label: '',
-          icon: (s as any).icon,
           midDegSVG: mid
         });
       }
@@ -135,7 +120,7 @@ export default function Wheel({
           }}
         >
           <svg width="100%" height="100%" viewBox="0 0 500 500" shapeRendering="geometricPrecision">
-            {/* Wedges + separator */}
+            {/* Wedges */}
             <g className="wedge-layer" aria-hidden>
               {wedges.map(w => (
                 <g key={`w-${w.idx}`}>
@@ -152,7 +137,7 @@ export default function Wheel({
               ))}
             </g>
 
-            {/* Highlight pemenang */}
+            {/* Winner glow */}
             {typeof winningIndex === 'number' && wedges[winningIndex] && (
               <g className="winner-layer" aria-hidden>
                 <path d={wedges[winningIndex].d} className="wedge-win-fill" />
@@ -160,15 +145,15 @@ export default function Wheel({
               </g>
             )}
 
-            {/* Label / Icon / Image — tangent + auto-flip */}
+            {/* Label & Icon */}
             <g className="labels-layer">
               {wedges.map(w => {
-                const rotateForPosition = w.midDegSVG + 90;              // arah radial ke bisektor
-                const rotateForTangent = 90;                              // radial -> tangent
+                const rotateForPosition = w.midDegSVG + 90; // arah radial ke bisektor
+                const rotateForTangent = 90;                 // radial -> tangent
                 const abs = normDeg(rotationDeg + rotateForPosition + rotateForTangent);
                 const flip = (abs > 90 && abs < 270) ? 180 : 0;
 
-                const baseTransform =
+                const base =
                   `translate(${cx} ${cy}) ` +
                   `rotate(${rotateForPosition}) ` +
                   `translate(0 ${-textR}) ` +
@@ -177,7 +162,7 @@ export default function Wheel({
                 if (w.mode === 'amount') {
                   const fontSize = fitFontByChord(w.label, step, textR, 12, 20);
                   return (
-                    <g key={`lab-${w.idx}`} transform={baseTransform}>
+                    <g key={`lab-${w.idx}`} transform={base}>
                       <text
                         className={winningIndex === w.idx ? 'label win-label' : 'label'}
                         textAnchor="middle"
@@ -200,16 +185,21 @@ export default function Wheel({
                   );
                 }
 
+                // ==== IMAGE WEDGE (dibesarkan & miring mengikuti wedge) ====
                 if (w.mode === 'image' && w.image?.src) {
-                  // Ukuran ikon adaptif dari chord agar proporsional di banyak wedge
+                  // skala otomatis berdasar chord → lebih besar dari sebelumnya
                   const chord = chordLen(textR, step);
-                  const size = Math.max(16, Math.min(w.image.size ?? 999, Math.min(28, chord * 0.38)));
+                  const auto = Math.min(36, Math.max(22, chord * 0.52)); // ← ukuran otomatis (≈+35%)
+                  const size = w.image.size ?? auto;
                   const half = size / 2;
-                  const rotateExtra = w.image.rotate ?? 0;
+                  const extra = w.image.rotate ?? 0;
 
                   return (
-                    <g key={`img-${w.idx}`} transform={`${baseTransform} rotate(${rotateExtra})`} className="icon-label">
-                      {/* <image> di SVG: pakai 'href' (React 18) */}
+                    <g
+                      key={`img-${w.idx}`}
+                      transform={`${base} rotate(${extra})`}
+                      className="icon-label"
+                    >
                       <image
                         href={w.image.src}
                         x={-half}
@@ -225,16 +215,11 @@ export default function Wheel({
                   );
                 }
 
-                // fallback ikon vector (kalau ada yang masih {icon:'android'})
-                return (
-                  <g key={`ico-${w.idx}`} transform={baseTransform} className="icon-label">
-                    <AndroidPhoneIcon size={22} />
-                  </g>
-                );
+                return null;
               })}
             </g>
 
-            {/* Rim luar */}
+            {/* Rim */}
             <circle
               cx={cx}
               cy={cy}
@@ -256,19 +241,6 @@ export default function Wheel({
         </div>
       </div>
     </div>
-  );
-}
-
-/* ===== Ikon vector fallback (kalau dipakai) ===== */
-function AndroidPhoneIcon({ size = 22 }: { size?: number }) {
-  const s = size, r = 3;
-  return (
-    <svg width={s} height={s} viewBox="-14 -18 28 36" aria-hidden focusable="false">
-      <rect x={-10} y={-16} width={20} height={32} rx={r} ry={r}
-            fill="#3DDC84" stroke="rgba(15,23,42,.65)" strokeWidth={1.8} />
-      <rect x={-4} y={-13.5} width={8} height={1.8} rx={0.9} fill="rgba(15,23,42,.85)" />
-      <circle cx={0} cy={12} r={1.7} fill="rgba(15,23,42,.85)" />
-    </svg>
   );
 }
 
