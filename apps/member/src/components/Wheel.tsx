@@ -150,30 +150,15 @@ export default function Wheel({
                 <feComposite in="SourceGraphic" />
               </filter>
 
+              {/* Glow tipis untuk teks */}
               <filter id="lux-text-glow">
                 <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="#000" floodOpacity=".55"/>
-              </filter>
-
-              {/* === Stone texture (fractal noise) === */}
-              <filter id="stone-noise" x="-10%" y="-10%" width="120%" height="120%">
-                <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" seed="11" result="turb" />
-                <feColorMatrix in="turb" type="saturate" values="0" result="mono"/>
-                {/* lembutkan kontras + set transparansi tekstur */}
-                <feComponentTransfer in="mono">
-                  <feFuncR type="gamma" amplitude="1" exponent="1.2" offset="0"/>
-                  <feFuncG type="gamma" amplitude="1" exponent="1.2" offset="0"/>
-                  <feFuncB type="gamma" amplitude="1" exponent="1.2" offset="0"/>
-                  <feFuncA type="table" tableValues="0 0 .10 .16 .22 .28 .34 .40 .46 .52"/>
-                </feComponentTransfer>
               </filter>
             </defs>
 
             {/* Wedges */}
             <g className="wedge-layer" filter="url(#lux-inner)" aria-hidden>
               {wedges.map(w => (
-                <clipPath key={`clip-${w.idx}`} id={`clip-${w.idx}`} clipPathUnits="userSpaceOnUse">
-                  <path d={w.d}/>
-                </clipPath>
                 <g key={`w-${w.idx}`}>
                   <path d={w.d} fill={w.fill} />
                   <path d={w.d} fill="none" stroke="rgba(15,23,42,.22)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
@@ -187,21 +172,6 @@ export default function Wheel({
                       stroke="url(#lux-gold)" strokeWidth="2" opacity=".85" />
               <circle cx={cx} cy={cy} r={R - 3.5} fill="none"
                       stroke="rgba(255,255,255,.10)" strokeWidth="1" />
-            </g>
-
-            {/* Stone texture per wedge (sangat halus) */}
-            <g className="texture-layer" aria-hidden>
-              {wedges.map(w => (
-                <g key={`tex-${w.idx}`} clipPath={`url(#clip-${w.idx})`}>
-                  <rect
-                    x="0" y="0" width="500" height="500"
-                    fill="#808080"                               // abu netral untuk overlay
-                    filter="url(#stone-noise)"                   // fractal noise
-                    opacity=".28"                                // INTENSITAS (0.18–0.35 enak)
-                    style={{ mixBlendMode: 'overlay', pointerEvents: 'none' }}
-                  />
-                </g>
-              ))}
             </g>
 
             {/* Highlight pemenang */}
