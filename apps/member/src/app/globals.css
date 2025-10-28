@@ -340,3 +340,11 @@ body {
   z-index: 0;            /* paling belakang */
   pointer-events: none;  /* klik tembus */
 }
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&display=swap');
+
+.lux-label{
+  font-family: 'Cinzel', ui-serif, Georgia, serif;
+  font-size: 14px;          /* biarkan logic auto-size kamu override bila ada */
+  text-transform: none;     /* jangan uppercase paksa */
+}
