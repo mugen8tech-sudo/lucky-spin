@@ -291,10 +291,10 @@ body {
   font-weight: 600;
   user-select: none;
   pointer-events: none;
-  fill: #0f172a;
+  fill: #fff;
   paint-order: stroke fill;
-  stroke: rgba(255,255,255,0.80);
-  stroke-width: .8px;
+  stroke: rgba(0,0,0,.5);
+  stroke-width: .6px;
   text-rendering: geometricPrecision;
 }
 @media (prefers-color-scheme: dark){
