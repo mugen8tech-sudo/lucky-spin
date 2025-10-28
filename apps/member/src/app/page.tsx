@@ -173,7 +173,13 @@ export default function Page() {
           <button className="btn btn-primary" onClick={handleSpin} disabled={disabled}>
             {spinning ? 'Memutar…' : 'Putar'}
           </button>
-          <button className="btn" onClick={() => setShowPanel(false)} disabled={spinning}>Tutup</button>
+          <button
+            className="btn"
+            onClick={() => setShowPanel(false)}
+            disabled={spinning || claiming}
+          >
+            Tutup
+          </button>
         </div>
       )}
     </div>
