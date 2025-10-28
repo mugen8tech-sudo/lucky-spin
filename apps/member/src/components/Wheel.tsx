@@ -158,13 +158,13 @@ export default function Wheel({
 
               {/* === Stone texture (fractal noise) === */}
               <filter id="stone-noise" x="-10%" y="-10%" width="120%" height="120%">
-                <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" seed="11" result="turb" />
+                <feTurbulence type="fractalNoise" baseFrequency="1.2" numOctaves="5" seed="11" result="turb" />
                 <feColorMatrix in="turb" type="saturate" values="0" result="mono"/>
                 <feComponentTransfer in="mono">
-                  <feFuncR type="gamma" amplitude="1" exponent="1.2" offset="0"/>
-                  <feFuncG type="gamma" amplitude="1" exponent="1.2" offset="0"/>
-                  <feFuncB type="gamma" amplitude="1" exponent="1.2" offset="0"/>
-                  <feFuncA type="table" tableValues="0 0 .10 .16 .22 .28 .34 .40 .46 .52"/>
+                  <feFuncR type="gamma" amplitude="1" exponent="1.25" offset="0"/>
+                  <feFuncG type="gamma" amplitude="1" exponent="1.25" offset="0"/>
+                  <feFuncB type="gamma" amplitude="1" exponent="1.25" offset="0"/>
+                  <feFuncA type="table" tableValues="0 0 .10 .18 .26 .34 .42 .50 .58 .66"/>
                 </feComponentTransfer>
               </filter>
 
@@ -186,16 +186,26 @@ export default function Wheel({
               ))}
             </g>
 
-            {/* Stone texture per wedge (halus) */}
+            {/* Stone texture per wedge (2-layer supaya terlihat di biru) */}
             <g className="texture-layer" aria-hidden style={{ isolation: 'isolate' as any }}>
               {wedges.map(w => (
                 <g key={`tex-${w.idx}`} clipPath={`url(#clip-${w.idx})`}>
+                  {/* Layer 1: highlights lembut */}
                   <rect
                     x="0" y="0" width="500" height="500"
-                    fill="#808080"
+                    fill="#ffffff"
                     filter="url(#stone-noise)"
-                    opacity=".24"                                /* intensitas corak */
-                    style={{ mixBlendMode: 'overlay', pointerEvents: 'none' }}
+                    opacity=".40"                                       // naikkan kalau mau lebih kelihatan
+                    style={{ mixBlendMode: 'soft-light', pointerEvents: 'none' }}
+                  />
+                  {/* Layer 2: urat gelap tipis (diputar sedikit) */}
+                  <rect
+                    x="0" y="0" width="500" height="500"
+                    fill="#000000"
+                    filter="url(#stone-noise)"
+                    transform="rotate(35 250 250)"
+                    opacity=".12"
+                    style={{ mixBlendMode: 'multiply', pointerEvents: 'none' }}
                   />
                 </g>
               ))}
