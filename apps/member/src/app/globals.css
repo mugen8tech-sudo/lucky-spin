@@ -349,3 +349,5 @@ body {
   font-size: 14px;          /* biarkan logic auto-size kamu override bila ada */
   text-transform: none;     /* jangan uppercase paksa */
 }
+
+.texture-layer { isolation: isolate; }
