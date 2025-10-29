@@ -100,7 +100,7 @@ export default function VouchersPage(){
 
   function copyCode(c:string){
     navigator.clipboard.writeText(c);
-    setFlash({kind:'success', text:'Kode disalin.'});
+    setFlash({ kind: 'error', text: 'Gagal menyalin kode.' });
     setTimeout(()=> setFlash(null), 1400);
   }
 
