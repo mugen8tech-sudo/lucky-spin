@@ -227,6 +227,23 @@ body {
 }
 @keyframes fx-flash { 0%{opacity:0} 12%{opacity:1} 100%{opacity:0} }
 
+/* ===== Screen-wide flash (menerangi seluruh overlay, 1× lalu hilang) */
+.fx-screen-flash{
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* Putih polos agar kompatibel; blend akan membuatnya tampak "menerangi" latar */
+  background: #ffffff;
+  mix-blend-mode: screen;         /* efek "terang" pada latar gelap */
+  opacity: 0;
+  animation: screen-flash 460ms ease-out forwards;
+}
+@keyframes screen-flash {
+  0%   { opacity: 0; }
+  12%  { opacity: 1; }           /* puncak terang singkat */
+  100% { opacity: 0; }           /* memudar kembali */
+}
+
 /* SVG container petir fractal */
 .fx-mega-svg {
   position: absolute;
