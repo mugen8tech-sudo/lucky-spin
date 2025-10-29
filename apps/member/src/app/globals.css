@@ -171,7 +171,16 @@ body {
   display: grid; place-items: center;
   z-index: 40;
 }
+
+.modal-overlay .fx-once {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;                /* efek di bawah kartu */
+}
+
 .modal-card {
+  position: relative;
   width: min(420px, 88vw);
   background: #051f2e;
   color: #bbe9f7;
@@ -180,6 +189,7 @@ body {
   padding: 18px;
   box-shadow: 0 20px 60px rgba(0,0,0,.55);
   display: grid; gap: 14px; place-items: center; text-align: center;
+  z-index: 1;
 }
 .modal-title { font-size: 18px; opacity: .95; }
 .modal-amount { font-size: 26px; font-weight: 800; }
