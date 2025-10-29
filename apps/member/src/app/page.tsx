@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import RainFX from '../components/RainFX';
 import LightningFX from '../components/LightningFX';
 import Wheel, { type SegmentSpec as WheelSegmentSpec } from '../components/Wheel';
@@ -12,6 +12,120 @@ type ClaimResp = ClaimOk | ClaimErr;
 const CONTACT_URL = process.env.NEXT_PUBLIC_CONTACT_URL || '#';
 const HUB_ICON_URL = process.env.NEXT_PUBLIC_HUB_ICON_URL || '/hub-icon.png';
 const HUB_FILL = (process.env.NEXT_PUBLIC_HUB_FILL || '#ffffff') as string;
+
+/** Flash petir SEKALI saat overlay hasil muncul */
+function OverlayBoltFlashOnce() {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const host = ref.current;
+    if (!host) return;
+
+    const rect = host.getBoundingClientRect();
+    const vw = Math.max(1, rect.width);
+    const vh = Math.max(1, rect.height);
+
+    // posisi X agak ke tengah supaya terlihat dramatis
+    const x = Math.round(vw * (0.42 + Math.random() * 0.16));
+
+    // === fractal polyline utama (dari atas ke bawah)
+    const main = fractalBolt(x, -40, x, vh + 40, vw * 0.06, 6);
+
+    // 2–3 cabang
+    const branches: number[][][] = [];
+    const branchCount = 2 + Math.floor(Math.random() * 2);
+    for (let i = 0; i < branchCount; i++) {
+      const startIdx = 6 + Math.floor(Math.random() * Math.max(6, main.length - 12));
+      const [sx, sy] = main[startIdx];
+      const dir = Math.random() < 0.5 ? -1 : 1;
+      const len = vh * (0.18 + Math.random() * 0.22);
+      const endX = sx + dir * (vw * (0.06 + Math.random() * 0.08));
+      const endY = sy + len;
+      branches.push(fractalBolt(sx, sy, endX, endY, vw * 0.04, 4));
+    }
+
+    // === SVG overlay dengan glow
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    svg.setAttribute('viewBox', `0 0 ${vw} ${vh}`);
+    svg.setAttribute('preserveAspectRatio', 'none');
+    svg.style.position = 'absolute';
+    svg.style.inset = '0';
+    svg.style.pointerEvents = 'none';
+
+    const defs = document.createElementNS(svg.namespaceURI, 'defs');
+    defs.innerHTML = `
+      <filter id="glowBlue" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="4" result="b1"/>
+        <feGaussianBlur in="b1" stdDeviation="8" result="b2"/>
+        <feMerge>
+          <feMergeNode in="b2"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    `;
+    svg.appendChild(defs);
+
+    const addPolyline = (pts: number[][], isBranch = false) => {
+      const pstr = pts.map(p => `${p[0]},${p[1]}`).join(' ');
+      const glow = document.createElementNS(svg.namespaceURI, 'polyline');
+      glow.setAttribute('points', pstr);
+      glow.setAttribute('pathLength', '1');
+      glow.setAttribute('class', isBranch ? 'bolt-glow bolt-branch' : 'bolt-glow');
+
+      const core = document.createElementNS(svg.namespaceURI, 'polyline');
+      core.setAttribute('points', pstr);
+      core.setAttribute('pathLength', '1');
+      core.setAttribute('class', isBranch ? 'bolt-core bolt-branch' : 'bolt-core');
+
+      svg.appendChild(glow);
+      svg.appendChild(core);
+    };
+
+    addPolyline(main, false);
+    branches.forEach(b => addPolyline(b, true));
+
+    // radial flash putih kebiruan
+    const flash = document.createElement('div');
+    flash.className = 'fx-flash';
+    flash.style.setProperty('--x', `${Math.round((x / vw) * 100)}%`);
+    flash.style.setProperty('--y', `50%`);
+
+    host.appendChild(flash);
+    host.appendChild(svg);
+
+    // cleanup after one shot
+    const t1 = setTimeout(() => flash.remove(), 560);
+    const t2 = setTimeout(() => svg.remove(), 620);
+    return () => { clearTimeout(t1); clearTimeout(t2); flash.remove(); svg.remove(); };
+  }, []);
+
+  return <div ref={ref} className="fx-once" aria-hidden="true" />;
+}
+
+/** Fractal bolt helper (diambil dari LightningFX.tsx sebagai referensi) */
+function fractalBolt(x1: number, y1: number, x2: number, y2: number, amp: number, depth: number): number[][] {
+  const pts: number[][] = [[x1, y1], [x2, y2]];
+  const rand = (n: number) => (Math.random() - 0.5) * n * 2;
+
+  for (let i = 0; i < depth; i++) {
+    const next: number[][] = [];
+    for (let j = 0; j < pts.length - 1; j++) {
+      const [ax, ay] = pts[j];
+      const [bx, by] = pts[j + 1];
+      const mx = (ax + bx) / 2;
+      const my = (ay + by) / 2;
+      const nx = mx + rand(amp);
+      const ny = my + rand(amp * 0.15);
+      next.push([ax, ay], [nx, ny]);
+    }
+    next.push(pts[pts.length - 1]);
+    pts.splice(0, pts.length, ...next);
+    amp *= 0.55;
+  }
+  return pts;
+}
 
 export default function Page() {
   // UI
@@ -206,6 +320,8 @@ export default function Page() {
       {/* Modal Hasil */}
       {showResult && (
         <div className="modal-overlay" role="dialog" aria-modal="true" onClick={() => setPrize(null)}>
+          {/* ⚡ efek petir sekali saat overlay muncul */}
+          <OverlayBoltFlashOnce />
           <div className="modal-card" onClick={e => e.stopPropagation()}>
             <div className="modal-title">Selamat!</div>
             <div className="modal-amount">
