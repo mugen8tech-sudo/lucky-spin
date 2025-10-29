@@ -1,7 +1,7 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'Lucky Spin — Member',
+  title: 'Lucky Wheel',
   description: 'Masukkan kode dan putar roda keberuntungan!',
 };
 
