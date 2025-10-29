@@ -234,21 +234,23 @@ export default function Wheel({
                       stroke="rgba(255,255,255,.10)" strokeWidth="1" />
             </g>
 
-            {/* Rim dots at each wedge midpoint */}
+            {/* Rim dots at each wedge midpoint (on outer ring) */}
             <g className="rim-dots" aria-hidden>
               {wedges.map((w, i) => {
                 const isWin = typeof winningIndex === 'number' && winningIndex === i;
-                const dotR = R - 4; // posisi radial titik (sedikit di dalam rim)
+
+                // POSISI: taruh di ring terluar, sedikit (+1.2px) ke luar agar “menyentuh” pointer
+                const dotR = outerR + 1.2;  // sebelumnya: R - 4 (terlalu ke dalam)
                 const base =
                   `translate(${cx} ${cy}) rotate(${w.midDegSVG + 90}) translate(0 ${-dotR})`;
 
                 return (
                   <g key={`dot-${i}`} transform={base} filter="url(#dot-blue-glow)">
-                    {/* glow halos */}
-                    <circle r={isWin ? 12 : 8} fill="#38bdf8" opacity={isWin ? 0.20 : 0.12}/>
-                    <circle r={isWin ? 8.5 : 6} fill="#0ea5e9" opacity={isWin ? 0.22 : 0.14}/>
-                    {/* bright core */}
-                    <circle r={isWin ? 3.6 : 2.6} fill="url(#dot-blue-core)"/>
+                    {/* halos / glow */}
+                    <circle r={isWin ? 13 : 9}  fill="#38bdf8" opacity={isWin ? 0.22 : 0.14}/>
+                    <circle r={isWin ? 9.5 : 7} fill="#0ea5e9" opacity={isWin ? 0.24 : 0.16}/>
+                    {/* bright core tepat di ring */}
+                    <circle r={isWin ? 3.8 : 2.8} fill="url(#dot-blue-core)"/>
                   </g>
                 );
               })}
