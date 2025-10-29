@@ -17,7 +17,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <nav className="nav">
               <Link href="/members">Member & Voucher</Link>
               <Link href="/vouchers">Riwayat Voucher</Link>
-              <Link href="/health">Health</Link>
             </nav>
           </header>
           <AdminKeyBar />
