@@ -164,7 +164,7 @@ export default function Page() {
           {msg && msg.kind === 'error' && <div className="alert alert-error">{msg.text}</div>}
           <input
             className="input"
-            placeholder="Contoh: ABCD1234EF"
+            placeholder="Masukkan Kode Voucher Anda"
             value={code}
             onChange={e => setCode(e.target.value.toUpperCase().replace(/\s/g,''))}
             autoFocus
