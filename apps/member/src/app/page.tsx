@@ -170,6 +170,14 @@ export default function Page() {
     return ()=> { document.body.style.overflow = prev; };
   }, [showPanel, showResult]);
 
+  // Selalu kosongkan input & bersihkan pesan saat panel dibuka
+  useEffect(() => {
+    if (showPanel) {
+      setCode('');
+      setMsg(null);
+    }
+  }, [showPanel]);
+
   async function handleSpin() {
     if (disabled) return;
     setMsg(null);
@@ -289,8 +297,12 @@ export default function Page() {
             className="input"
             placeholder="Masukkan Kode Voucher Anda"
             value={code}
-            onChange={e => setCode(e.target.value.toUpperCase().replace(/\s/g,''))}
+            onChange={e => setCode(e.target.value.toUpperCase().replace(/\s/g, ''))}
             autoFocus
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
             inputMode="text"
           />
           <button className="btn btn-primary" onClick={handleSpin} disabled={disabled}>
@@ -298,7 +310,7 @@ export default function Page() {
           </button>
           <button
             className="btn"
-            onClick={() => setShowPanel(false)}
+            onClick={() => { setShowPanel(false); setCode(''); setMsg(null); }}
             disabled={spinning || claiming}
           >
             Tutup
@@ -328,7 +340,12 @@ export default function Page() {
 
       {/* Modal Hasil */}
       {showResult && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" onClick={() => setPrize(null)}>
+        <div
+          className="modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => { setPrize(null); setCode(''); }}
+        >
           {/* ⚡ efek petir sekali saat overlay muncul */}
           <OverlayBoltFlashOnce />
           <div className="modal-card" onClick={e => e.stopPropagation()}>
@@ -338,7 +355,7 @@ export default function Page() {
             </div>
             <div className="modal-actions">
               <a className="btn btn-primary" href={CONTACT_URL} target="_blank" rel="noopener noreferrer">Hubungi Kami</a>
-              <button className="btn" onClick={() => setPrize(null)}>Oke</button>
+              <button className="btn" onClick={() => { setPrize(null); setCode(''); }}>Oke</button>
             </div>
           </div>
         </div>
