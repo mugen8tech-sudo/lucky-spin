@@ -351,3 +351,7 @@ body {
 }
 
 .texture-layer { isolation: isolate; }
+
+/* Flash sekali khusus modal – di bawah kartu, di atas overlay blur */
+.modal-card { position: relative; z-index: 2; }
+.modal-flash { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
