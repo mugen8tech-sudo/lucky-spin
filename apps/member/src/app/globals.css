@@ -298,7 +298,7 @@ body {
   text-rendering: geometricPrecision;
 }
 @media (prefers-color-scheme: dark){
-  .label{ fill:#0b1220; stroke:rgba(255,255,255,.85); }
+  .label{ fill:#fff; stroke:rgba(0,0,0,.55); }
 }
 
 /* Ikon label mengikuti aturan teks: non-interaktif + kontras */
