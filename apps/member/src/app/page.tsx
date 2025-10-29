@@ -112,7 +112,7 @@ export default function Page() {
     const targetAngle = norm(360 - centerDeg);             // posisikan tepat di bawah pointer (12 o'clock)
 
     // animasi putar
-    const baseTurns = 6 + Math.floor(Math.random() * 2);   // 6–7 putaran
+    const baseTurns = 9 + Math.floor(Math.random() * 2);   // 6–7 putaran
     const startAngle = norm(rotation);
     const delta = baseTurns * 360 + norm(targetAngle - startAngle);
 
