@@ -20,7 +20,7 @@ export default function VouchersPage(){
   // filters
   const [member,setMember] = useState('');
   const [status,setStatus] = useState<'ALL'|'ISSUED'|'CLAIMED'|'PROCESSED'>('ALL');
-  const [unprocessed,setUnprocessed]=useState(false);
+  const [unprocessed,setUnprocessed]= useState(false);
   const [code,setCode] = useState('');
   const [from,setFrom] = useState(''); // yyyy-mm-dd
   const [to,setTo]     = useState(''); // yyyy-mm-dd
@@ -164,18 +164,29 @@ export default function VouchersPage(){
           <tbody>
             {rows.map(r=>(
               <tr key={r.id}>
-                <td style={{fontFamily:'ui-monospace'}}>{r.code}</td>
+                <td>
+                  <div style={{display:'flex', alignItems:'center', gap:8}}>
+                    <span style={{fontFamily:'ui-monospace'}}>{r.code}</span>
+                    <button
+                      className="btn"
+                      onClick={()=>copyCode(r.code)}
+                      title="Salin kode"
+                      style={{padding:'4px 8px', lineHeight:1, fontSize:12}}
+                    >
+                      Copy
+                    </button>
+                  </div>
+                </td>
                 <td>{r.full_name}</td>
                 <td style={{textAlign:'right'}}>{rupiah(r.amount)}</td>
                 <td>{r.status}</td>
                 <td>{time(r.issued_at)}</td>
                 <td>{time(r.claimed_at)}</td>
                 <td>{time(r.processed_at)}</td>
-                <td style={{display:'flex', gap:8}}>
-                  <button className="btn" onClick={()=>copyCode(r.code)}>Copy</button>
+                <td>
                   {r.status==='CLAIMED'
                     ? <button className="btn btn-primary" onClick={()=>processOne(r.id)}>Process</button>
-                    : <span style={{opacity:.6, alignSelf:'center'}}>-</span>}
+                    : <span style={{opacity:.6}}> - </span>}
                 </td>
               </tr>
             ))}
