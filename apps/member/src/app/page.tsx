@@ -139,6 +139,28 @@ export default function Page() {
     return ((a % 360) + 360) % 360;
   }
 
+  function ModalLightningFX() {
+    return (
+      <div className="modal-bolt" aria-hidden>
+        {/* Dua kilatan radial di sekitar modal */}
+        <div className="flash" style={{ ['--x' as any]:'50%', ['--y' as any]:'28%' }} />
+        <div className="flash" style={{ ['--x' as any]:'60%', ['--y' as any]:'62%' }} />
+
+        {/* Satu petir zig-zag di belakang modal */}
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+          <polyline
+            className="bolt-glow"
+            points="58,6 45,34 62,34 40,74 50,50 33,50"
+          />
+          <polyline
+            className="bolt-core"
+            points="58,6 45,34 62,34 40,74 50,50 33,50"
+          />
+        </svg>
+      </div>
+    );
+  }
+
   const centerContent = (
     <div className="center-ui">
       {!showPanel && !showResult && (
@@ -206,6 +228,7 @@ export default function Page() {
       {/* Modal Hasil */}
       {showResult && (
         <div className="modal-overlay" role="dialog" aria-modal="true" onClick={() => setPrize(null)}>
+          <ModalLightningFX />
           <div className="modal-card" onClick={e => e.stopPropagation()}>
             <div className="modal-title">Selamat!</div>
             <div className="modal-amount">
