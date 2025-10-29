@@ -10,7 +10,7 @@
   --primary: #0560b5;
   --primary-600: #22b0e3;
   --danger: #ef4444;
-  --ring: #22c55e33;
+  --ring: #4287f5;
 
   /* ukuran roda responsif */
   --wheel-size: clamp(320px, 90vw, 600px);
