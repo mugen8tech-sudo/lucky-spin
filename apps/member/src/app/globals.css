@@ -364,17 +364,12 @@ body {
   position: fixed;
   inset: 0;
   background-image: url("/background.gif");
+  background-size: 140vmin auto;   /* <<< kecilkan/besar-kan di sini */
   background-position: center;
   background-repeat: no-repeat;
-  /* perbesar dari sebelumnya */
-  background-size: min(120vmin, 1200px) auto; /* coba 110–130vmin sesuai selera */
-  /* opsional: blend supaya area hitam GIF tidak terlihat kontras */
-  background-color: #0b1324;          /* samakan dengan warna latar page */
-  background-blend-mode: lighten;     /* atau 'screen' */
   z-index: 0;
   pointer-events: none;
 }
-
 .lux-label{
   font-family: 'Cinzel', ui-serif, Georgia, serif;
   font-size: 14px;          /* biarkan logic auto-size kamu override bila ada */
