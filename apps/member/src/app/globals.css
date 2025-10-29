@@ -137,7 +137,7 @@ body {
 /* Pointer segitiga kuning */
 .pointer {
   position: absolute;
-  top: -20px;
+  top: -10px;
   left: 50%;
   transform: translateX(-50%);
   width: 0; height: 0;
