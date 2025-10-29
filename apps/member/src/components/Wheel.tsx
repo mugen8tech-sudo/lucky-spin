@@ -242,7 +242,7 @@ export default function Wheel({
                 const isWin = typeof winningIndex === 'number' && winningIndex === i;
 
                 // POSISI: taruh di ring terluar, sedikit (+1.2px) ke luar agar “menyentuh” pointer
-                const dotR = outerR + 1;  // sebelumnya: R - 4 (terlalu ke dalam)
+                const dotR = outerR + 2.5;  // sebelumnya: R - 4 (terlalu ke dalam)
                 const base =
                   `translate(${cx} ${cy}) rotate(${w.midDegSVG + 90}) translate(0 ${-dotR})`;
 
