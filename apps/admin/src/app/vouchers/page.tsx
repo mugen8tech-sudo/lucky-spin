@@ -111,29 +111,30 @@ export default function VouchersPage() {
   }, [ready, key, qs]);
 
   async function processOne(id: string) {
-    // LOGIKA TETAP: langsung proses tanpa prompt catatan
+    // Tetap: langsung proses tanpa prompt
     const res = await fetch(`/api/admin/vouchers/${id}/process`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ note: null }),
     });
-    const data = await res.json();
+
+    // Jika response tidak JSON, jangan munculkan flash
+    let data: any = null;
+    try { data = await res.json(); } catch {}
 
     if (data?.ok) {
-      setRows((prev) =>
-        prev.map((r) =>
+      setRows(prev =>
+        prev.map(r =>
           r.id === id
             ? { ...r, status: 'PROCESSED', processed_at: new Date().toISOString() }
             : r
         )
       );
-      // Tampilkan notifikasi "OK" satu tombol
-      setOkVisible(true);
+      setOkVisible(true); // dialog "Kode Berhasil Diproses"
     } else {
-      setFlash({
-        kind: 'error',
-        text: `Gagal memproses: ${data?.error || res.status}`,
-      });
+      // ❌ HILANGKAN NOTIF MERAH
+      // (opsional) log internal saja biar mudah debug:
+      console.warn('Process failed:', data?.error || res.status);
     }
   }
 
