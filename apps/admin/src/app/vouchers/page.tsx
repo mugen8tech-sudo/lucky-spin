@@ -1,7 +1,7 @@
 'use client';
 
 import { useAdminKey } from '../../components/useAdminKey';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 type Row = {
   id: string; code: string; amount: number; status: 'ISSUED'|'CLAIMED'|'PROCESSED';
@@ -11,6 +11,8 @@ type Row = {
 
 const rupiah = (n:number)=> new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR', maximumFractionDigits:0}).format(n);
 const time = (s?:string)=> s ? new Date(s).toLocaleString('id-ID') : '';
+const [okVisible, setOkVisible] = useState(false);
+const okBtnRef = useRef<HTMLButtonElement>(null);
 
 type Flash = { kind:'success'|'error', text:string } | null;
 
@@ -63,6 +65,18 @@ export default function VouchersPage(){
   }
 
   useEffect(()=> { if(ready && key) { setRows([]); setNextCursor(null); load(true); } }, [ready,key, qs]);
+  useEffect(() => {
+    if (!okVisible) return;
+    okBtnRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === 'Escape' || e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();
+        setOkVisible(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [okVisible]);
 
   async function processOne(id: string){
     const note = window.prompt('Catatan (opsional):','');
@@ -72,6 +86,7 @@ export default function VouchersPage(){
     const data = await res.json();
     if(data?.ok){
       setRows(prev => prev.map(r => r.id===id ? {...r, status: 'PROCESSED', processed_at: new Date().toISOString()} : r));
+      setOkVisible(true);
     } else {
       setFlash({kind:'error', text:`Gagal memproses: ${data?.error || res.status}`});
     }
@@ -197,6 +212,33 @@ export default function VouchersPage(){
           </tbody>
         </table>
       </div>
+
+      {okVisible && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setOkVisible(false)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)',
+            display: 'grid', placeItems: 'center', zIndex: 1000
+          }}
+        >
+          <div className="card" onClick={e => e.stopPropagation()} style={{ minWidth: 320 }}>
+            <div style={{ padding: 16, textAlign: 'center', fontWeight: 600 }}>
+              Kode Berhasil Diproses
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '0 16px 16px' }}>
+              <button
+                ref={okBtnRef}
+                className="btn btn-primary"
+                onClick={() => setOkVisible(false)}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* PAGINATION */}
       <div style={{display:'flex', justifyContent:'center', marginTop:12}}>
