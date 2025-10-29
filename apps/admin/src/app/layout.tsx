@@ -3,7 +3,7 @@ import Link from 'next/link';
 import AdminKeyBar from '../components/AdminKeyBar';
 
 export const metadata = {
-  title: 'Lucky Spin — Admin',
+  title: 'Panel Lucky Wheel',
   description: 'Admin panel for vouchers',
 };
 
