@@ -269,12 +269,10 @@ export default function Page() {
       ? (wheel.segments as unknown as WheelSegmentSpec[])
       : wheel.segments.map((n: any) => (Number.isFinite(n) ? Number(n) : 0));
 
-    // update config spin
     const N = Math.max(nextSegments.length, 1);
     const step = 360 / N;
-    const targetIndex =
-      ((wheel.targetIndex % N) + N) % N; // normalisasi agar 0..N-1
-    const targetMid = targetIndex * step + step / 2;
+    const targetIndex = ((wheel.targetIndex % N) + N) % N;
+    const targetMid = (targetIndex + 0.5) * step;
 
     setSegments(nextSegments);
     setSpinMs(Math.max(1200, Number(wheel.spinMs) || 6000));
@@ -283,10 +281,10 @@ export default function Page() {
     setWinningIndex(null);
 
     // hitung rotasi: beberapa putaran penuh + berhenti di midpoint target
-    const spins = 5; // putaran penuh
-    const startAngle = norm(rotation);
-    const jitter = (Math.random() - 0.5) * 2; // ±1 deg agar terasa natural
-    const delta = spins * 360 + (360 - targetMid) + jitter;
+    const spins = 9; // putaran penuh
+    const startAngle = ((rotation % 360) + 360) % 360;
+    const jitter = (Math.random() - 0.5) * 0.4; // ±0.2°
+    const delta = spins * 360 - targetMid + jitter;
 
     // trigger animasi
     setClaiming(false);
