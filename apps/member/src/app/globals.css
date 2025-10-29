@@ -363,13 +363,14 @@ body {
 .bg-gif{
   position: fixed;
   inset: 0;
-  background-image: url("/background.gif");
-  background-size: 240vmin auto;   /* <<< kecilkan/besar-kan di sini */
+  background-image: url("/bg.gif"); /* taruh file di /public/bg.gif */
+  background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  z-index: 0;
-  pointer-events: none;
+  z-index: 0;            /* paling belakang */
+  pointer-events: none;  /* klik tembus */
 }
+
 .lux-label{
   font-family: 'Cinzel', ui-serif, Georgia, serif;
   font-size: 14px;          /* biarkan logic auto-size kamu override bila ada */
