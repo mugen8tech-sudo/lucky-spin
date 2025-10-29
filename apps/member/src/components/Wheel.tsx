@@ -240,7 +240,7 @@ export default function Wheel({
                 const isWin = typeof winningIndex === 'number' && winningIndex === i;
                 const dotR = R - 4; // posisi radial titik (sedikit di dalam rim)
                 const base =
-                  `translate(${cx} ${cy}) rotate(${i * step - 90}) translate(0 ${-dotR})`;
+                  `translate(${cx} ${cy}) rotate(${w.midDegSVG + 90}) translate(0 ${-dotR})`;
 
                 return (
                   <g key={`dot-${i}`} transform={base} filter="url(#dot-blue-glow)">
