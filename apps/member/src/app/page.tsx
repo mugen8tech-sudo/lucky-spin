@@ -44,6 +44,11 @@ function OverlayBoltFlashOnce() {
       branches.push(fractalBolt(sx, sy, endX, endY, vw * 0.04, 4));
     }
 
+    // === NEW: kilatan layar seluruh overlay (di bawah stroke petir)
+    const screenFlash = document.createElement('div');     // <--
+    screenFlash.className = 'fx-screen-flash';             // <--
+    host.appendChild(screenFlash);                         // <--
+
     // === SVG overlay dengan glow
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('width', '100%');
@@ -98,7 +103,11 @@ function OverlayBoltFlashOnce() {
     // cleanup after one shot
     const t1 = setTimeout(() => flash.remove(), 560);
     const t2 = setTimeout(() => svg.remove(), 620);
-    return () => { clearTimeout(t1); clearTimeout(t2); flash.remove(); svg.remove(); };
+    const t3 = setTimeout(() => screenFlash.remove(), 620); // <--
+    return () => {
+      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); // <--
+      flash.remove(); svg.remove(); screenFlash.remove();   // <--
+    };
   }, []);
 
   return <div ref={ref} className="fx-once" aria-hidden="true" />;
