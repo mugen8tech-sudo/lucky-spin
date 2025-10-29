@@ -232,6 +232,8 @@ export default function Wheel({
                       stroke="url(#lux-gold)" strokeWidth="2" opacity=".85" />
               <circle cx={cx} cy={cy} r={R - 3.5} fill="none"
                       stroke="rgba(255,255,255,.10)" strokeWidth="1" />
+              <circle cx={cx} cy={cy} r={outerR} fill="none"
+                      stroke="rgba(15,23,42,.55)" strokeWidth="3" vectorEffect="non-scaling-stroke" />
             </g>
 
             {/* Rim dots at each wedge midpoint (on outer ring) */}
@@ -240,7 +242,7 @@ export default function Wheel({
                 const isWin = typeof winningIndex === 'number' && winningIndex === i;
 
                 // POSISI: taruh di ring terluar, sedikit (+1.2px) ke luar agar “menyentuh” pointer
-                const dotR = outerR + .8;  // sebelumnya: R - 4 (terlalu ke dalam)
+                const dotR = outerR + 1;  // sebelumnya: R - 4 (terlalu ke dalam)
                 const base =
                   `translate(${cx} ${cy}) rotate(${w.midDegSVG + 90}) translate(0 ${-dotR})`;
 
