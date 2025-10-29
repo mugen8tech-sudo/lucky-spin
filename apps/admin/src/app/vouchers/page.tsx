@@ -98,10 +98,11 @@ export default function VouchersPage(){
     setMember(''); setStatus('ALL'); setUnprocessed(false); setCode(''); setFrom(''); setTo('');
   }
 
-  function copyCode(c:string){
-    navigator.clipboard.writeText(c);
-    setFlash({ kind: 'error', text: 'Gagal menyalin kode.' });
-    setTimeout(()=> setFlash(null), 1400);
+  function copyCode(c: string) {
+    navigator.clipboard.writeText(c).catch(() => {
+      // Hanya tampilkan error kalau gagal menyalin
+      setFlash({ kind: 'error', text: 'Gagal menyalin kode.' });
+    });
   }
 
   if(!ready) return <div>Loading…</div>;
