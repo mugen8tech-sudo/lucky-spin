@@ -363,7 +363,7 @@ body {
 .bg-gif{
   position: fixed;
   inset: 0;
-  background-image: url("/bg.gif"); /* taruh file di /public/bg.gif */
+  background-image: url("/bg2.gif"); /* taruh file di /public/bg.gif */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
