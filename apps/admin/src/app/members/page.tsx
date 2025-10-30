@@ -246,7 +246,7 @@ export default function MembersPage(){
 
           {/* Cari Member - dropdown (kosong saat belum ketik) */}
           <div style={{marginTop:8}}>
-            <label>Cari Member (exact, satu kata)</label>
+            <label>Cari Member</label>
             <div
               ref={memberWrapRef}
               className="dropdown"
@@ -260,7 +260,7 @@ export default function MembersPage(){
               <input
                 ref={memberInputRef}
                 className="input"
-                placeholder={loadingMembers ? 'Memuat member…' : 'Ketik nama persis — Enter'}
+                placeholder={loadingMembers ? 'Memuat member…' : 'search'}
                 value={memberSearch}
                 onFocus={()=> setMemberOpen(true)}
                 onChange={e=>{ setMemberSearch(e.target.value); setMemberOpen(true); setMemberHL(0); }}
@@ -292,7 +292,7 @@ export default function MembersPage(){
 
           {/* Nominal quick add - dropdown (kosong saat belum ketik) */}
           <div style={{marginTop:14}}>
-            <h3 style={{margin:'6px 0'}}>Nominal cepat (Enter menambah 1 kode)</h3>
+            <h3 style={{margin:'6px 0'}}>Nominal</h3>
             <div
               ref={nominalWrapRef}
               className="dropdown"
@@ -311,7 +311,7 @@ export default function MembersPage(){
               <input
                 ref={nominalInputRef}
                 className="input"
-                placeholder="Ketik angka (mis. 15 -> Rp 15.000), lalu Enter"
+                placeholder="search"
                 value={nominalSearch}
                 onFocus={()=> setNomOpen(true)}
                 onChange={e=>{ setNominalSearch(e.target.value); setNomOpen(true); setNomHL(0); }}
