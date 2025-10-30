@@ -363,7 +363,7 @@ body {
 .bg-gif{
   position: fixed;
   inset: 0;
-  background-image: url("/bg4.gif");
+  background-image: url("/bg5.gif");
   background-size: 120vmin auto;   /* <<< kecilkan/besar-kan di sini */
   background-position: center;
   background-repeat: no-repeat;
