@@ -364,7 +364,7 @@ body {
   position: fixed;
   inset: 0;
   background-image: url("/bg5.gif");
-  background-size: 150vmin auto;   /* <<< kecilkan/besar-kan di sini */
+  background-size: 165vmin auto;   /* <<< kecilkan/besar-kan di sini */
   background-position: center;
   background-repeat: no-repeat;
   z-index: 0;
