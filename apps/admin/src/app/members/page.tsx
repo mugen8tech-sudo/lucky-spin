@@ -2,6 +2,7 @@
 
 import { useAdminKey } from '../../components/useAdminKey';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { adminHeaders } from 'lib/client-auth';
 
 type Member = { id: string; full_name: string; email?: string; phone?: string; };
 type Denom = number;
@@ -67,14 +68,11 @@ export default function MembersPage(){
       .then(r=>r.json()).then(d=>{ if(d?.ok) setMembers(d.members); })
       .catch(()=>{})
       .finally(()=> setLoadingMembers(false));
-    fetch('/api/admin/denominations', { headers })
+    fetch('/api/admin/denominations/generate', { headers: adminHeaders(), cache: 'no-store' })
       .then(r => r.json())
       .then(d => {
         if (!d?.ok) return;
-        const amounts = (d.items as any[])
-          .filter((x: any) => !x.is_dummy && x.is_enabled_generate)
-          .map((x: any) => Number(x.amount));
-        setDenoms(amounts);
+        setDenoms(d.amounts as number[]);
       })
       .catch(() => {});
     const d = new Date(); d.setDate(d.getDate()+14);
