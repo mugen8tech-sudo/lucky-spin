@@ -1,6 +1,7 @@
 'use client';
 
-const CANDIDATES = ['admin-key', 'ADMIN_KEY', 'x-admin-key'];
+// tambahkan 'adminKey' (camelCase) jika header lama menyimpannya dengan nama itu
+const CANDIDATES = ['admin-key', 'ADMIN_KEY', 'x-admin-key', 'adminKey'];
 
 export function getAdminKey(): string {
   for (const k of CANDIDATES) {
@@ -17,7 +18,9 @@ export function getSuperKey(): string {
 }
 
 export function adminHeaders(extra?: Record<string,string>): HeadersInit {
-  const h: Record<string,string> = { 'x-admin-key': getAdminKey() };
+  const h: Record<string,string> = {};
+  const ak = getAdminKey();
+  if (ak) h['x-admin-key'] = ak;
   const sk = getSuperKey();
   if (sk) h['x-super-key'] = sk;
   return { ...(extra || {}), ...h };
