@@ -346,7 +346,7 @@ export default function Page() {
   return (
     <main className="screen">
       {/* Background effects */}
-      <div className="bg-gif" aria-hidden />
+       <VideoBG src="/bg.webm"/>
       <RainFX />
 
       {/* Wheel… (tetap sama) */}
