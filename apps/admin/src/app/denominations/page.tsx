@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { adminHeaders, getSuperKey, SUPER_KEY_LS } from 'lib/client-auth';
 
 type Denom = {
   id: string;
@@ -16,32 +17,45 @@ type Denom = {
   updated_at: string;
 };
 
-const ADMIN_KEY_LS = 'admin-key'; // sesuaikan jika projekmu pakai key yang berbeda
-
 export default function AllowedDenominationsPage() {
   const [items, setItems] = useState<Denom[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<string | null>(null);
 
-  // form tambah
+  // modal tambah
   const [showAddCash, setShowAddCash] = useState(false);
   const [showAddDummy, setShowAddDummy] = useState(false);
   const [formCash, setFormCash] = useState({ amount: '' });
   const [formDummy, setFormDummy] = useState({ label: '', iconUrl: '', isEnabledWheel: true, weight: 1, priority: 0 });
 
-  const adminKey = useMemo(() => (typeof window !== 'undefined' ? localStorage.getItem(ADMIN_KEY_LS) ?? '' : ''), []);
+  // Super Key local UI
+  const [superKey, setSuperKey] = useState('');
+  useEffect(() => { setSuperKey(getSuperKey()); }, []);
+
+  const hasAdminKey = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return !!localStorage.getItem('admin-key') ||
+           !!localStorage.getItem('ADMIN_KEY') ||
+           !!localStorage.getItem('x-admin-key');
+  }, []);
 
   async function fetchItems() {
     setLoading(true);
     setError(null);
     try {
       const res = await fetch('/api/admin/denominations', {
-        headers: { 'x-admin-key': adminKey },
+        headers: adminHeaders(),
         cache: 'no-store',
       });
       const data = await res.json();
-      if (!res.ok || !data?.ok) throw new Error(data?.error || 'Gagal memuat');
+      if (!res.ok || !data?.ok) {
+        throw new Error(
+          res.status === 401
+            ? '401: Forbidden (Super Key salah / belum di-set)'
+            : data?.error || 'Gagal memuat'
+        );
+      }
       setItems(data.items as Denom[]);
     } catch (e: any) {
       setError(e?.message ?? 'Gagal memuat');
@@ -56,31 +70,26 @@ export default function AllowedDenominationsPage() {
   }, []);
 
   function updateLocal(id: string, patch: Partial<Denom>) {
-    setItems(curr => curr.map(it => (it.id === id ? { ...it, ...patch } : it)));
+    setItems((curr) => curr.map((it) => (it.id === id ? { ...it, ...patch } : it)));
   }
 
   async function patchItem(id: string, body: any) {
-    setSaving(s => ({ ...s, [id]: true }));
+    setSaving((s) => ({ ...s, [id]: true }));
     setError(null);
     try {
       const res = await fetch(`/api/admin/denominations/${id}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-key': adminKey,
-        },
+        headers: { 'Content-Type': 'application/json', ...adminHeaders() },
         body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok || !data?.ok) throw new Error(data?.error || 'Gagal menyimpan');
-      // sinkronkan state
-      setItems(curr => curr.map(it => (it.id === id ? data.item : it)));
+      setItems((curr) => curr.map((it) => (it.id === id ? data.item : it)));
     } catch (e: any) {
       setError(e?.message ?? 'Gagal menyimpan');
-      // reload baris bila gagal
-      fetchItems();
+      fetchItems(); // rollback
     } finally {
-      setSaving(s => ({ ...s, [id]: false }));
+      setSaving((s) => ({ ...s, [id]: false }));
     }
   }
 
@@ -89,7 +98,7 @@ export default function AllowedDenominationsPage() {
     try {
       const res = await fetch('/api/admin/denominations', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+        headers: { 'Content-Type': 'application/json', ...adminHeaders() },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
@@ -114,7 +123,7 @@ export default function AllowedDenominationsPage() {
     try {
       const res = await fetch('/api/admin/denominations', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+        headers: { 'Content-Type': 'application/json', ...adminHeaders() },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
@@ -125,6 +134,11 @@ export default function AllowedDenominationsPage() {
     } catch (e: any) {
       alert(e?.message ?? 'Gagal tambah dummy');
     }
+  }
+
+  function saveSuperKeyLocal(v: string) {
+    localStorage.setItem(SUPER_KEY_LS, v);
+    setSuperKey(v);
   }
 
   return (
@@ -144,10 +158,32 @@ export default function AllowedDenominationsPage() {
         </div>
       </div>
 
-      {error && <div className="p-3 rounded bg-red-50 text-red-700 text-sm">{error}</div>}
-      {!adminKey && (
+      {!hasAdminKey && (
         <div className="p-3 rounded bg-yellow-50 text-yellow-900 text-sm">
-          Admin key tidak ditemukan di browser (localStorage). Set dulu dari halaman utama / header ya.
+          Admin Key belum ditemukan di browser. Set dulu dari header.
+        </div>
+      )}
+
+      <div className="rounded border p-3 inline-flex items-center gap-2">
+        <span className="text-sm">Super Key:</span>
+        <input
+          type="password"
+          className="px-2 py-1 border rounded w-64"
+          value={superKey}
+          onChange={(e) => setSuperKey(e.target.value)}
+          placeholder="••••••"
+        />
+        <button className="px-3 py-1 rounded bg-slate-800 text-white" onClick={() => saveSuperKeyLocal(superKey)}>
+          Simpan
+        </button>
+        <button className="px-3 py-1 rounded border" onClick={() => saveSuperKeyLocal('')}>
+          Hapus
+        </button>
+      </div>
+
+      {error && (
+        <div className="p-3 rounded bg-red-50 text-red-700 text-sm">
+          {error}
         </div>
       )}
 
@@ -236,7 +272,7 @@ export default function AllowedDenominationsPage() {
                         className="w-20 border rounded px-2 py-1 text-center"
                         value={it.weight}
                         disabled={savingRow}
-                        onChange={(e) => updateLocal(it.id, { weight: Number(e.target.value) || 0 })}
+                        onChange={(e) => updateLocal(it.id, { weight: Number(e.target.value) || 1 })}
                       />
                     </td>
 
@@ -256,7 +292,7 @@ export default function AllowedDenominationsPage() {
                         disabled={savingRow}
                         onClick={() =>
                           patchItem(it.id, {
-                            amount: it.amount, // server akan tolak duplikat cash
+                            amount: it.amount,
                             label: it.label ?? null,
                             iconUrl: it.icon_url ?? null,
                             isEnabledWheel: it.is_enabled_wheel,
@@ -313,7 +349,7 @@ export default function AllowedDenominationsPage() {
                 className="w-full border rounded px-3 py-2"
                 placeholder="cth: Android Bonus"
                 value={formDummy.label}
-                onChange={(e) => setFormDummy(s => ({ ...s, label: e.target.value }))}
+                onChange={(e) => setFormDummy((s) => ({ ...s, label: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
@@ -323,7 +359,7 @@ export default function AllowedDenominationsPage() {
                 className="w-full border rounded px-3 py-2"
                 placeholder="https://…"
                 value={formDummy.iconUrl}
-                onChange={(e) => setFormDummy(s => ({ ...s, iconUrl: e.target.value }))}
+                onChange={(e) => setFormDummy((s) => ({ ...s, iconUrl: e.target.value }))}
               />
             </div>
             <div className="flex items-center gap-2">
@@ -331,7 +367,7 @@ export default function AllowedDenominationsPage() {
                 id="d-wheel"
                 type="checkbox"
                 checked={formDummy.isEnabledWheel}
-                onChange={(e) => setFormDummy(s => ({ ...s, isEnabledWheel: e.target.checked }))}
+                onChange={(e) => setFormDummy((s) => ({ ...s, isEnabledWheel: e.target.checked }))}
               />
               <label htmlFor="d-wheel">Tampilkan di wheel</label>
             </div>
@@ -342,7 +378,7 @@ export default function AllowedDenominationsPage() {
                   type="number"
                   className="w-full border rounded px-3 py-2"
                   value={formDummy.weight}
-                  onChange={(e) => setFormDummy(s => ({ ...s, weight: Number(e.target.value) || 1 }))}
+                  onChange={(e) => setFormDummy((s) => ({ ...s, weight: Number(e.target.value) || 1 }))}
                 />
               </div>
               <div>
@@ -351,7 +387,7 @@ export default function AllowedDenominationsPage() {
                   type="number"
                   className="w-full border rounded px-3 py-2"
                   value={formDummy.priority}
-                  onChange={(e) => setFormDummy(s => ({ ...s, priority: Number(e.target.value) || 0 }))}
+                  onChange={(e) => setFormDummy((s) => ({ ...s, priority: Number(e.target.value) || 0 }))}
                 />
               </div>
             </div>
