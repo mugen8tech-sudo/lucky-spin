@@ -155,6 +155,20 @@ export default function Page() {
     5000, 10000, 15000, 20000, 25000, 30000, 35000, 50000, 100000, 250000, 500000,
     { image: '/icons/android.png', size: 60, alt: 'Android Bonus' }  // << ikon PNG
   ]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch('/api/wheel', { cache: 'no-store' });
+        const d = await r.json();
+        if (r.ok && d?.ok && Array.isArray(d.segments) && d.segments.length) {
+          setSegments(d.segments as WheelSegmentSpec[]);
+        }
+      } catch {
+        // diamkan saja; fallback segmen awal tetap dipakai
+      }
+    })();
+  }, []);
+  
   const [spinMs, setSpinMs] = useState(6000);
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
