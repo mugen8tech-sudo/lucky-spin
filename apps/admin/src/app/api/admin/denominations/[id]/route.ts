@@ -4,11 +4,11 @@ export const revalidate = 0;
 
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from 'lib/db';
-import { assertAdmin } from 'lib/admin';
+import { assertSuper } from 'lib/admin';
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    assertAdmin(req);
+    assertSuper(req);
     const id = params.id;
     const body = await req.json().catch(() => ({}));
 
