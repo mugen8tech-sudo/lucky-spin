@@ -4,11 +4,11 @@ export const revalidate = 0;
 
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from 'lib/db';
-import { assertAdmin } from 'lib/admin';
+import { assertSuper } from 'lib/admin';
 
 export async function GET(req: NextRequest) {
   try {
-    assertAdmin(req);
+    assertSuper(req);
     const { rows } = await pool.query(`
       SELECT id, amount, is_dummy, label, icon_url,
              is_enabled_wheel, is_enabled_generate,
