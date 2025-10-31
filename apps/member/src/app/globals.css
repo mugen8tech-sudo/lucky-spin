@@ -378,3 +378,13 @@ body {
 }
 
 .texture-layer { isolation: isolate; }
+
+/* background video */
+.screen{ position: relative; overflow: hidden; }
+.bg-video{ position: absolute; inset: 0; z-index: -2; }
+.bg-video-el{ width: 100%; height: 100%; object-fit: cover; }
+.bg-video-shade{
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,.15), rgba(0,0,0,.45));
+  pointer-events: none;
+}
