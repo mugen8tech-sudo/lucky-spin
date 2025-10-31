@@ -5,8 +5,16 @@ import RainFX from '../components/RainFX';
 import LightningFX from '../components/LightningFX';
 import Wheel, { type SegmentSpec as WheelSegmentSpec } from '../components/Wheel';
 
-type ClaimOk = { ok:true; amount:number; wheel:{ segments:number[]; targetIndex:number; spinMs:number } };
-type ClaimErr = { ok:false; reason:'INVALID_CODE'|'ALREADY_USED'|'EXPIRED'|'UNABLE_TO_CLAIM'|'SERVER_ERROR'; detail?:string };
+type ClaimOk = {
+  ok: true;
+  amount: number;
+  wheel: { segments: WheelSegmentSpec[]; targetIndex: number; spinMs: number };
+};
+type ClaimErr = {
+  ok: false;
+  reason: 'INVALID_CODE' | 'ALREADY_USED' | 'EXPIRED' | 'UNABLE_TO_CLAIM' | 'SERVER_ERROR';
+  detail?: string;
+};
 type ClaimResp = ClaimOk | ClaimErr;
 
 const CONTACT_URL = process.env.NEXT_PUBLIC_CONTACT_URL || '#';
@@ -190,6 +198,7 @@ export default function Page() {
       res = await fetch('/api/claim', {
         method:'POST',
         headers: { 'Content-Type':'application/json' },
+        cache: 'no-store', // penting: selalu ambil konfigurasi wheel terbaru
         body: JSON.stringify({ code: code.trim() })
       });
     } catch {
