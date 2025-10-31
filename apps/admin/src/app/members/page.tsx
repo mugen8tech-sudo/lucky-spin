@@ -68,7 +68,15 @@ export default function MembersPage(){
       .catch(()=>{})
       .finally(()=> setLoadingMembers(false));
     fetch('/api/admin/denominations', { headers })
-      .then(r=>r.json()).then(d=> { if(d?.ok) setDenoms(d.amounts as number[]); });
+      .then(r => r.json())
+      .then(d => {
+        if (!d?.ok) return;
+        const amounts = (d.items as any[])
+          .filter((x: any) => !x.is_dummy && x.is_enabled_generate)
+          .map((x: any) => Number(x.amount));
+        setDenoms(amounts);
+      })
+      .catch(() => {});
     const d = new Date(); d.setDate(d.getDate()+14);
     setExpiresAt(toLocalDatetimeInputValue(d));
     return ()=> controller.abort();
