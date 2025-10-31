@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    assertAdmin(req);
+    assertSuper(req);
     const body = await req.json().catch(() => ({}));
     const type = (body.type ?? 'cash') as 'cash' | 'dummy';
     const is_dummy = type === 'dummy';
