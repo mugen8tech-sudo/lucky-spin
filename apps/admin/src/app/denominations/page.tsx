@@ -253,3 +253,115 @@ export default function AllowedDenominationsPage() {
                     <td className="px-3 py-2 text-center">
                       <button
                         className="px-3 py-1 rounded bg-slate-800 text-white disabled:opacity-50"
+                        disabled={savingRow}
+                        onClick={() =>
+                          patchItem(it.id, {
+                            amount: it.amount, // server akan tolak duplikat cash
+                            label: it.label ?? null,
+                            iconUrl: it.icon_url ?? null,
+                            isEnabledWheel: it.is_enabled_wheel,
+                            isEnabledGenerate: it.is_enabled_generate,
+                            weight: it.weight,
+                            priority: it.priority,
+                          })
+                        }
+                      >
+                        {savingRow ? 'Saving…' : 'Save'}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Modal Tambah Cash */}
+      {showAddCash && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-4 w-full max-w-md space-y-4">
+            <h2 className="text-lg font-semibold">Tambah Cash</h2>
+            <div className="space-y-2">
+              <label className="block text-sm">Amount (Rp)</label>
+              <input
+                type="number"
+                className="w-full border rounded px-3 py-2"
+                placeholder="contoh: 10000"
+                value={formCash.amount}
+                onChange={(e) => setFormCash({ amount: e.target.value })}
+              />
+              <p className="text-xs text-slate-500">Harus unik dan &gt; 0.</p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button className="px-3 py-2 rounded border" onClick={() => setShowAddCash(false)}>Batal</button>
+              <button className="px-3 py-2 rounded bg-slate-800 text-white" onClick={addCash}>Tambah</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Tambah Dummy */}
+      {showAddDummy && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-4 w-full max-w-md space-y-4">
+            <h2 className="text-lg font-semibold">Tambah Dummy</h2>
+            <div className="space-y-2">
+              <label className="block text-sm">Label</label>
+              <input
+                type="text"
+                className="w-full border rounded px-3 py-2"
+                placeholder="cth: Android Bonus"
+                value={formDummy.label}
+                onChange={(e) => setFormDummy(s => ({ ...s, label: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm">Icon URL (opsional)</label>
+              <input
+                type="text"
+                className="w-full border rounded px-3 py-2"
+                placeholder="https://…"
+                value={formDummy.iconUrl}
+                onChange={(e) => setFormDummy(s => ({ ...s, iconUrl: e.target.value }))}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                id="d-wheel"
+                type="checkbox"
+                checked={formDummy.isEnabledWheel}
+                onChange={(e) => setFormDummy(s => ({ ...s, isEnabledWheel: e.target.checked }))}
+              />
+              <label htmlFor="d-wheel">Tampilkan di wheel</label>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm">Weight</label>
+                <input
+                  type="number"
+                  className="w-full border rounded px-3 py-2"
+                  value={formDummy.weight}
+                  onChange={(e) => setFormDummy(s => ({ ...s, weight: Number(e.target.value) || 1 }))}
+                />
+              </div>
+              <div>
+                <label className="block text-sm">Priority</label>
+                <input
+                  type="number"
+                  className="w-full border rounded px-3 py-2"
+                  value={formDummy.priority}
+                  onChange={(e) => setFormDummy(s => ({ ...s, priority: Number(e.target.value) || 0 }))}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button className="px-3 py-2 rounded border" onClick={() => setShowAddDummy(false)}>Batal</button>
+              <button className="px-3 py-2 rounded bg-slate-800 text-white" onClick={addDummy}>Tambah</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
