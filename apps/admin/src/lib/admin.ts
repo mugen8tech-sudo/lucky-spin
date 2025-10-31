@@ -1,35 +1,30 @@
+// apps/admin/src/lib/admin.ts
+
 function unauthorized(): never {
   const err: any = new Error('UNAUTHORIZED');
   err.status = 401;
   throw err;
 }
 
-function getHeader(req: Request, name: string): string | null {
-  // Headers case-insensitive; .get sudah cukup, helper disiapkan untuk konsistensi
-  return req.headers.get(name);
+function get(req: Request, h: string) {
+  return req.headers.get(h);
 }
 
-/** Wajib admin biasa */
+/** Admin biasa ATAU Super boleh lewat */
 export function assertAdmin(req: Request) {
-  const key = getHeader(req, 'x-admin-key');
-  if (!process.env.ADMIN_API_KEY || !key || key !== process.env.ADMIN_API_KEY) {
-    unauthorized();
-  }
-}
+  const ak = get(req, 'x-admin-key');
+  const sk = get(req, 'x-super-key');
 
-/** Wajib super admin */
-export function assertSuper(req: Request) {
-  const key = getHeader(req, 'x-super-key');
-  if (!process.env.ADMIN_SUPER_KEY || !key || key !== process.env.ADMIN_SUPER_KEY) {
-    unauthorized();
-  }
-}
+  const adminOk = !!process.env.ADMIN_API_KEY && ak === process.env.ADMIN_API_KEY;
+  const superOk = !!process.env.ADMIN_SUPER_KEY && sk === process.env.ADMIN_SUPER_KEY;
 
-/** Boleh admin biasa ATAU super admin */
-export function assertAdminOrSuper(req: Request) {
-  const adminOk = !!process.env.ADMIN_API_KEY &&
-                  getHeader(req, 'x-admin-key') === process.env.ADMIN_API_KEY;
-  const superOk = !!process.env.ADMIN_SUPER_KEY &&
-                  getHeader(req, 'x-super-key') === process.env.ADMIN_SUPER_KEY;
   if (!adminOk && !superOk) unauthorized();
+}
+
+/** Khusus halaman/endpoint yang hanya boleh Super Admin */
+export function assertSuper(req: Request) {
+  const sk = get(req, 'x-super-key');
+  if (!process.env.ADMIN_SUPER_KEY || sk !== process.env.ADMIN_SUPER_KEY) {
+    unauthorized();
+  }
 }
