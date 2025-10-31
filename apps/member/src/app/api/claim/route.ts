@@ -12,12 +12,11 @@ function getClientInfo(req: Request) {
   return { ip, ua };
 }
 
-/** Build wheel segments using allowed_denominations (cash + dummy).
- * - include items with is_enabled_wheel=true.
- * - dummy -> { image, alt }, use icon_url if available, else fallback generic icon.
- * - replicate by weight (min 1).
- * - Sorted by: is_dummy ASC, priority DESC, amount ASC, label ASC.
- * - Ensure actual voucher amount is present (append if missing).
+/** Build wheel segments from allowed_denominations:
+ * - tampilkan hanya yang is_enabled_wheel = true (cash + dummy)
+ * - dummy pakai icon_url (jika ada)
+ * - gunakan weight (min 1) untuk pengulangan wedge
+ * - pastikan nominal hadiah asli (amount) SELALU ada di roda
  */
 async function buildWheelConfig(amount: number) {
   const { rows } = await pool.query(`
@@ -44,10 +43,9 @@ async function buildWheelConfig(amount: number) {
     }
   }
 
-  // safety: always include real prize even if wheel toggle was off
-  if (!cashSet.has(amount)) segs.push(amount);
+  if (!cashSet.has(amount)) segs.push(amount); // safety: hadiah asli selalu ada
 
-  // shuffle (target ditentukan setelah shuffle)
+  // shuffle ringan
   for (let i = segs.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [segs[i], segs[j]] = [segs[j], segs[i]];
@@ -61,18 +59,16 @@ async function buildWheelConfig(amount: number) {
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({} as any));
-    const raw = (body?.code ?? '').toString();
-    if (!raw || raw.trim().length < 4) {
-      return NextResponse.json({ ok: false, reason: 'INVALID_CODE' }, { status: 400 });
-    }
-    const code = raw.trim().toUpperCase();
+    const code = String(body?.code || '').trim().toUpperCase();
+    if (!code) return NextResponse.json({ ok: false, reason: 'INVALID_CODE' }, { status: 400 });
+
     const { ip, ua } = getClientInfo(req);
 
+    // klaim voucher (tetap sama seperti sebelumnya)
     const claimRes = await pool.query(
       `SELECT * FROM public.claim_voucher_by_code($1::text, $2::text, $3::text);`,
       [code, ip || null, ua || null]
     );
-
     if (claimRes.rowCount === 0) {
       const check = await pool.query(`SELECT status, expires_at FROM vouchers WHERE code=$1`, [code]);
       if (check.rowCount === 0) return NextResponse.json({ ok: false, reason: 'INVALID_CODE' }, { status: 404 });
