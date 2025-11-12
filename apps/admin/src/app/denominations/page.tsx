@@ -5,7 +5,7 @@ import { adminHeaders, getSuperKey, SUPER_KEY_LS } from 'lib/client-auth';
 
 type Denom = {
   id: string;
-  amount: number;              // negatif untuk dummy (Plan B)
+  amount: number; // negatif untuk dummy (Plan B)
   is_dummy: boolean;
   label: string | null;
   icon_url: string | null;
@@ -27,17 +27,27 @@ export default function AllowedDenominationsPage() {
   const [showAddCash, setShowAddCash] = useState(false);
   const [showAddDummy, setShowAddDummy] = useState(false);
   const [formCash, setFormCash] = useState({ amount: '' });
-  const [formDummy, setFormDummy] = useState({ label: '', iconUrl: '', isEnabledWheel: true, weight: 1, priority: 0 });
+  const [formDummy, setFormDummy] = useState({
+    label: '',
+    iconUrl: '',
+    isEnabledWheel: true,
+    weight: 1,
+    priority: 0,
+  });
 
   // Super Key local UI
   const [superKey, setSuperKey] = useState('');
-  useEffect(() => { setSuperKey(getSuperKey()); }, []);
+  useEffect(() => {
+    setSuperKey(getSuperKey());
+  }, []);
 
   const hasAdminKey = useMemo(() => {
     if (typeof window === 'undefined') return false;
-    return !!localStorage.getItem('admin-key') ||
-           !!localStorage.getItem('ADMIN_KEY') ||
-           !!localStorage.getItem('x-admin-key');
+    return (
+      !!localStorage.getItem('admin-key') ||
+      !!localStorage.getItem('ADMIN_KEY') ||
+      !!localStorage.getItem('x-admin-key')
+    );
   }, []);
 
   async function fetchItems() {
@@ -70,7 +80,9 @@ export default function AllowedDenominationsPage() {
   }, []);
 
   function updateLocal(id: string, patch: Partial<Denom>) {
-    setItems((curr) => curr.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+    setItems((curr) =>
+      curr.map((it) => (it.id === id ? { ...it, ...patch } : it))
+    );
   }
 
   async function patchItem(id: string, body: any) {
@@ -79,12 +91,18 @@ export default function AllowedDenominationsPage() {
     try {
       const res = await fetch(`/api/admin/denominations/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...adminHeaders() },
+        headers: {
+          'Content-Type': 'application/json',
+          ...adminHeaders(),
+        },
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (!res.ok || !data?.ok) throw new Error(data?.error || 'Gagal menyimpan');
-      setItems((curr) => curr.map((it) => (it.id === id ? data.item : it)));
+      if (!res.ok || !data?.ok)
+        throw new Error(data?.error || 'Gagal menyimpan');
+      setItems((curr) =>
+        curr.map((it) => (it.id === id ? data.item : it))
+      );
     } catch (e: any) {
       setError(e?.message ?? 'Gagal menyimpan');
       fetchItems(); // rollback
@@ -98,11 +116,15 @@ export default function AllowedDenominationsPage() {
     try {
       const res = await fetch('/api/admin/denominations', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...adminHeaders() },
+        headers: {
+          'Content-Type': 'application/json',
+          ...adminHeaders(),
+        },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (!res.ok || !data?.ok) throw new Error(data?.error || 'Gagal tambah cash');
+      if (!res.ok || !data?.ok)
+        throw new Error(data?.error || 'Gagal tambah cash');
       setShowAddCash(false);
       setFormCash({ amount: '' });
       fetchItems();
@@ -123,13 +145,23 @@ export default function AllowedDenominationsPage() {
     try {
       const res = await fetch('/api/admin/denominations', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...adminHeaders() },
+        headers: {
+          'Content-Type': 'application/json',
+          ...adminHeaders(),
+        },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (!res.ok || !data?.ok) throw new Error(data?.error || 'Gagal tambah dummy');
+      if (!res.ok || !data?.ok)
+        throw new Error(data?.error || 'Gagal tambah dummy');
       setShowAddDummy(false);
-      setFormDummy({ label: '', iconUrl: '', isEnabledWheel: true, weight: 1, priority: 0 });
+      setFormDummy({
+        label: '',
+        iconUrl: '',
+        isEnabledWheel: true,
+        weight: 1,
+        priority: 0,
+      });
       fetchItems();
     } catch (e: any) {
       alert(e?.message ?? 'Gagal tambah dummy');
@@ -141,154 +173,221 @@ export default function AllowedDenominationsPage() {
     setSuperKey(v);
   }
 
+  const inputBase =
+    'border border-slate-700 bg-slate-900/60 text-slate-100 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 placeholder-slate-500';
+
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Allowed Denominations</h1>
-        <div className="flex gap-2">
-          <button className="px-3 py-2 rounded bg-slate-800 text-white" onClick={() => setShowAddCash(true)}>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Allowed Denominations
+        </h1>
+        <div className="flex flex-wrap gap-2">
+          <button
+            className="px-3 py-2 rounded bg-sky-600 hover:bg-sky-500 text-white text-sm"
+            onClick={() => setShowAddCash(true)}
+          >
             + Tambah Cash
           </button>
-          <button className="px-3 py-2 rounded bg-slate-800 text-white" onClick={() => setShowAddDummy(true)}>
+          <button
+            className="px-3 py-2 rounded bg-sky-600 hover:bg-sky-500 text-white text-sm"
+            onClick={() => setShowAddDummy(true)}
+          >
             + Tambah Dummy
           </button>
-          <button className="px-3 py-2 rounded border" onClick={fetchItems}>
+          <button
+            className="px-3 py-2 rounded border border-slate-700 text-sm hover:bg-slate-800/60"
+            onClick={fetchItems}
+          >
             Refresh
           </button>
         </div>
       </div>
 
       {!hasAdminKey && (
-        <div className="p-3 rounded bg-yellow-50 text-yellow-900 text-sm">
+        <div className="p-3 rounded border border-yellow-400/40 bg-yellow-500/10 text-yellow-100 text-xs">
           Admin Key belum ditemukan di browser. Set dulu dari header.
         </div>
       )}
 
-      <div className="rounded border p-3 inline-flex items-center gap-2">
-        <span className="text-sm">Super Key:</span>
+      <div className="rounded border border-slate-700 bg-slate-900/60 px-3 py-2 inline-flex flex-wrap items-center gap-2 text-sm">
+        <span className="text-slate-200 text-xs">Super Key:</span>
         <input
           type="password"
-          className="px-2 py-1 border rounded w-64"
+          className={`${inputBase} w-64`}
           value={superKey}
           onChange={(e) => setSuperKey(e.target.value)}
-          placeholder="••••••"
         />
-        <button className="px-3 py-1 rounded bg-slate-800 text-white" onClick={() => saveSuperKeyLocal(superKey)}>
+        <button
+          className="px-3 py-1 rounded bg-sky-600 hover:bg-sky-500 text-white text-xs"
+          onClick={() => saveSuperKeyLocal(superKey)}
+        >
           Simpan
         </button>
-        <button className="px-3 py-1 rounded border" onClick={() => saveSuperKeyLocal('')}>
+        <button
+          className="px-3 py-1 rounded border border-slate-700 text-xs hover:bg-slate-800/70"
+          onClick={() => saveSuperKeyLocal('')}
+        >
           Hapus
         </button>
       </div>
 
       {error && (
-        <div className="p-3 rounded bg-red-50 text-red-700 text-sm">
+        <div className="p-3 rounded border border-red-500/40 bg-red-500/10 text-red-100 text-xs">
           {error}
         </div>
       )}
 
       {loading ? (
-        <div className="text-sm text-slate-500">Memuat…</div>
+        <div className="text-sm text-slate-400">Memuat…</div>
       ) : (
-        <div className="overflow-auto border rounded">
-          <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-slate-700">
+        <div className="overflow-auto rounded-lg border border-slate-800 bg-slate-950/60 shadow-sm">
+          <table className="min-w-full text-xs border-collapse">
+            <thead className="bg-slate-900/90 text-slate-100 sticky top-0 z-10">
               <tr>
-                <th className="px-3 py-2 text-left">Type</th>
-                <th className="px-3 py-2 text-right">Amount</th>
-                <th className="px-3 py-2 text-left">Label</th>
-                <th className="px-3 py-2 text-left">Icon</th>
-                <th className="px-3 py-2 text-center">Wheel</th>
-                <th className="px-3 py-2 text-center">Generate</th>
-                <th className="px-3 py-2 text-center">Weight</th>
-                <th className="px-3 py-2 text-center">Priority</th>
-                <th className="px-3 py-2 text-center">Aksi</th>
+                <th className="px-3 py-2 text-left font-medium">Type</th>
+                <th className="px-3 py-2 text-right font-medium">Amount</th>
+                <th className="px-3 py-2 text-left font-medium">Label</th>
+                <th className="px-3 py-2 text-left font-medium">Icon</th>
+                <th className="px-3 py-2 text-center font-medium">Wheel</th>
+                <th className="px-3 py-2 text-center font-medium">
+                  Wheel Generate
+                </th>
+                <th className="px-3 py-2 text-center font-medium">Weight</th>
+                <th className="px-3 py-2 text-center font-medium">Priority</th>
+                <th className="px-3 py-2 text-center font-medium">Aksi</th>
               </tr>
             </thead>
             <tbody>
-              {items.map((it) => {
+              {items.map((it, idx) => {
                 const savingRow = !!saving[it.id];
                 const isDummy = it.is_dummy || it.amount < 0;
-                return (
-                  <tr key={it.id} className="border-t">
-                    <td className="px-3 py-2">{isDummy ? 'Dummy' : 'Cash'}</td>
+                const rowBg =
+                  idx % 2 === 0
+                    ? 'bg-slate-900/50'
+                    : 'bg-slate-900/30';
 
-                    <td className="px-3 py-2 text-right">
+                return (
+                  <tr
+                    key={it.id}
+                    className={`${rowBg} border-t border-slate-800 hover:bg-slate-800/80 transition-colors`}
+                  >
+                    <td className="px-3 py-2 text-slate-100 align-middle whitespace-nowrap">
+                      {isDummy ? 'Dummy' : 'Cash'}
+                    </td>
+
+                    <td className="px-3 py-2 text-right align-middle">
                       <input
                         type="number"
-                        className="w-32 border rounded px-2 py-1 text-right"
+                        className={`${inputBase} w-32 text-right`}
                         value={it.amount}
                         disabled={isDummy || savingRow}
-                        onChange={(e) => updateLocal(it.id, { amount: Number(e.target.value) || 0 })}
+                        onChange={(e) =>
+                          updateLocal(it.id, {
+                            amount: Number(e.target.value) || 0,
+                          })
+                        }
                       />
                     </td>
 
-                    <td className="px-3 py-2">
+                    <td className="px-3 py-2 align-middle">
                       <input
                         type="text"
-                        className="w-52 border rounded px-2 py-1"
-                        placeholder={isDummy ? 'cth: Android Bonus' : 'opsional'}
+                        className={`${inputBase} w-52`}
+                        placeholder={
+                          isDummy ? 'cth: Android Bonus' : 'opsional'
+                        }
                         value={it.label ?? ''}
                         disabled={savingRow}
-                        onChange={(e) => updateLocal(it.id, { label: e.target.value })}
+                        onChange={(e) =>
+                          updateLocal(it.id, { label: e.target.value })
+                        }
                       />
                     </td>
 
-                    <td className="px-3 py-2">
+                    <td className="px-3 py-2 align-middle">
                       <div className="flex items-center gap-2">
                         <input
                           type="text"
-                          className="w-64 border rounded px-2 py-1"
+                          className={`${inputBase} w-64`}
                           placeholder="https://… (opsional)"
                           value={it.icon_url ?? ''}
                           disabled={savingRow}
-                          onChange={(e) => updateLocal(it.id, { icon_url: e.target.value })}
+                          onChange={(e) =>
+                            updateLocal(it.id, {
+                              icon_url: e.target.value,
+                            })
+                          }
                         />
-                        {it.icon_url ? <img src={it.icon_url} alt="" className="w-6 h-6 rounded" /> : null}
+                        {it.icon_url ? (
+                          <img
+                            src={it.icon_url}
+                            alt=""
+                            className="w-6 h-6 rounded border border-slate-700 object-cover"
+                          />
+                        ) : null}
                       </div>
                     </td>
 
-                    <td className="px-3 py-2 text-center">
+                    <td className="px-3 py-2 text-center align-middle">
                       <input
                         type="checkbox"
+                        className="h-4 w-4 accent-sky-500"
                         checked={it.is_enabled_wheel}
                         disabled={savingRow}
-                        onChange={(e) => updateLocal(it.id, { is_enabled_wheel: e.target.checked })}
+                        onChange={(e) =>
+                          updateLocal(it.id, {
+                            is_enabled_wheel: e.target.checked,
+                          })
+                        }
                       />
                     </td>
 
-                    <td className="px-3 py-2 text-center">
+                    <td className="px-3 py-2 text-center align-middle">
                       <input
                         type="checkbox"
+                        className="h-4 w-4 accent-sky-500"
                         checked={it.is_enabled_generate}
                         disabled={savingRow || isDummy}
-                        onChange={(e) => updateLocal(it.id, { is_enabled_generate: e.target.checked })}
+                        onChange={(e) =>
+                          updateLocal(it.id, {
+                            is_enabled_generate: e.target.checked,
+                          })
+                        }
                       />
                     </td>
 
-                    <td className="px-3 py-2 text-center">
+                    <td className="px-3 py-2 text-center align-middle">
                       <input
                         type="number"
-                        className="w-20 border rounded px-2 py-1 text-center"
+                        className={`${inputBase} w-20 text-center`}
                         value={it.weight}
                         disabled={savingRow}
-                        onChange={(e) => updateLocal(it.id, { weight: Number(e.target.value) || 1 })}
+                        onChange={(e) =>
+                          updateLocal(it.id, {
+                            weight: Number(e.target.value) || 1,
+                          })
+                        }
                       />
                     </td>
 
-                    <td className="px-3 py-2 text-center">
+                    <td className="px-3 py-2 text-center align-middle">
                       <input
                         type="number"
-                        className="w-20 border rounded px-2 py-1 text-center"
+                        className={`${inputBase} w-20 text-center`}
                         value={it.priority}
                         disabled={savingRow}
-                        onChange={(e) => updateLocal(it.id, { priority: Number(e.target.value) || 0 })}
+                        onChange={(e) =>
+                          updateLocal(it.id, {
+                            priority: Number(e.target.value) || 0,
+                          })
+                        }
                       />
                     </td>
 
-                    <td className="px-3 py-2 text-center">
+                    <td className="px-3 py-2 text-center align-middle">
                       <button
-                        className="px-3 py-1 rounded bg-slate-800 text-white disabled:opacity-50"
+                        className="px-3 py-1 rounded bg-sky-600 hover:bg-sky-500 text-white text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={savingRow}
                         onClick={() =>
                           patchItem(it.id, {
@@ -315,23 +414,39 @@ export default function AllowedDenominationsPage() {
 
       {/* Modal Tambah Cash */}
       {showAddCash && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-4 w-full max-w-md space-y-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-20">
+          <div className="bg-slate-950 border border-slate-700 rounded-lg p-4 w-full max-w-md space-y-4 shadow-xl">
             <h2 className="text-lg font-semibold">Tambah Cash</h2>
-            <div className="space-y-2">
-              <label className="block text-sm">Amount (Rp)</label>
+            <div className="space-y-2 text-sm">
+              <label className="block text-xs text-slate-300">
+                Amount (Rp)
+              </label>
               <input
                 type="number"
-                className="w-full border rounded px-3 py-2"
+                className={`${inputBase} w-full px-3 py-2`}
                 placeholder="contoh: 10000"
                 value={formCash.amount}
-                onChange={(e) => setFormCash({ amount: e.target.value })}
+                onChange={(e) =>
+                  setFormCash({ amount: e.target.value })
+                }
               />
-              <p className="text-xs text-slate-500">Harus unik dan &gt; 0.</p>
+              <p className="text-[11px] text-slate-400">
+                Harus unik dan &gt; 0.
+              </p>
             </div>
-            <div className="flex justify-end gap-2">
-              <button className="px-3 py-2 rounded border" onClick={() => setShowAddCash(false)}>Batal</button>
-              <button className="px-3 py-2 rounded bg-slate-800 text-white" onClick={addCash}>Tambah</button>
+            <div className="flex justify-end gap-2 text-sm">
+              <button
+                className="px-3 py-2 rounded border border-slate-700 hover:bg-slate-800/70"
+                onClick={() => setShowAddCash(false)}
+              >
+                Batal
+              </button>
+              <button
+                className="px-3 py-2 rounded bg-sky-600 hover:bg-sky-500 text-white"
+                onClick={addCash}
+              >
+                Tambah
+              </button>
             </div>
           </div>
         </div>
@@ -339,61 +454,110 @@ export default function AllowedDenominationsPage() {
 
       {/* Modal Tambah Dummy */}
       {showAddDummy && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-4 w-full max-w-md space-y-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-20">
+          <div className="bg-slate-950 border border-slate-700 rounded-lg p-4 w-full max-w-md space-y-4 shadow-xl">
             <h2 className="text-lg font-semibold">Tambah Dummy</h2>
-            <div className="space-y-2">
-              <label className="block text-sm">Label</label>
+            <div className="space-y-2 text-sm">
+              <label className="block text-xs text-slate-300">
+                Label
+              </label>
               <input
                 type="text"
-                className="w-full border rounded px-3 py-2"
+                className={`${inputBase} w-full px-3 py-2`}
                 placeholder="cth: Android Bonus"
                 value={formDummy.label}
-                onChange={(e) => setFormDummy((s) => ({ ...s, label: e.target.value }))}
+                onChange={(e) =>
+                  setFormDummy((s) => ({
+                    ...s,
+                    label: e.target.value,
+                  }))
+                }
               />
             </div>
-            <div className="space-y-2">
-              <label className="block text-sm">Icon URL (opsional)</label>
+            <div className="space-y-2 text-sm">
+              <label className="block text-xs text-slate-300">
+                Icon URL (opsional)
+              </label>
               <input
                 type="text"
-                className="w-full border rounded px-3 py-2"
+                className={`${inputBase} w-full px-3 py-2`}
                 placeholder="https://…"
                 value={formDummy.iconUrl}
-                onChange={(e) => setFormDummy((s) => ({ ...s, iconUrl: e.target.value }))}
+                onChange={(e) =>
+                  setFormDummy((s) => ({
+                    ...s,
+                    iconUrl: e.target.value,
+                  }))
+                }
               />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 text-sm">
               <input
                 id="d-wheel"
                 type="checkbox"
+                className="h-4 w-4 accent-sky-500"
                 checked={formDummy.isEnabledWheel}
-                onChange={(e) => setFormDummy((s) => ({ ...s, isEnabledWheel: e.target.checked }))}
+                onChange={(e) =>
+                  setFormDummy((s) => ({
+                    ...s,
+                    isEnabledWheel: e.target.checked,
+                  }))
+                }
               />
-              <label htmlFor="d-wheel">Tampilkan di wheel</label>
+              <label
+                htmlFor="d-wheel"
+                className="text-slate-200 text-xs"
+              >
+                Tampilkan di wheel
+              </label>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <label className="block text-sm">Weight</label>
+                <label className="block text-xs text-slate-300">
+                  Weight
+                </label>
                 <input
                   type="number"
-                  className="w-full border rounded px-3 py-2"
+                  className={`${inputBase} w-full px-3 py-2`}
                   value={formDummy.weight}
-                  onChange={(e) => setFormDummy((s) => ({ ...s, weight: Number(e.target.value) || 1 }))}
+                  onChange={(e) =>
+                    setFormDummy((s) => ({
+                      ...s,
+                      weight: Number(e.target.value) || 1,
+                    }))
+                  }
                 />
               </div>
               <div>
-                <label className="block text-sm">Priority</label>
+                <label className="block text-xs text-slate-300">
+                  Priority
+                </label>
                 <input
                   type="number"
-                  className="w-full border rounded px-3 py-2"
+                  className={`${inputBase} w-full px-3 py-2`}
                   value={formDummy.priority}
-                  onChange={(e) => setFormDummy((s) => ({ ...s, priority: Number(e.target.value) || 0 }))}
+                  onChange={(e) =>
+                    setFormDummy((s) => ({
+                      ...s,
+                      priority: Number(e.target.value) || 0,
+                    }))
+                  }
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-2">
-              <button className="px-3 py-2 rounded border" onClick={() => setShowAddDummy(false)}>Batal</button>
-              <button className="px-3 py-2 rounded bg-slate-800 text-white" onClick={addDummy}>Tambah</button>
+            <div className="flex justify-end gap-2 text-sm">
+              <button
+                className="px-3 py-2 rounded border border-slate-700 hover:bg-slate-800/70"
+                onClick={() => setShowAddDummy(false)}
+              >
+                Batal
+              </button>
+              <button
+                className="px-3 py-2 rounded bg-sky-600 hover:bg-sky-500 text-white"
+                onClick={addDummy}
+              >
+                Tambah
+              </button>
             </div>
           </div>
         </div>
