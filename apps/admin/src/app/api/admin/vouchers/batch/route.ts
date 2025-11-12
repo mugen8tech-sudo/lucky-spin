@@ -7,7 +7,7 @@ import crypto from 'crypto';
 import { pool } from 'lib/db';
 import { assertAdmin } from 'lib/admin';
 
-function genCode(len = 12) {
+function genCode(len = 8) {
   return crypto.randomBytes(24)
     .toString('base64')
     .replace(/[^A-Z0-9]/gi, '')
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     const created: { id: string; code: string }[] = [];
 
     while (created.length < count) {
-      const code = genCode(12);
+      const code = genCode(8);
       try {
         const { rows } = await client.query(
           `INSERT INTO vouchers(code, member_id, amount, status, expires_at)
