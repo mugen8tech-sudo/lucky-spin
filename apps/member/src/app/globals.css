@@ -2,6 +2,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@800;900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Chelsea+Market&display=swap');
 
 :root {
   --bg: #020617;
@@ -436,7 +437,9 @@ body {
 }
 
 /* Gunakan font sans formal yang jelas (ganti var-nya untuk A/B test) */
-:root { --wheel-heading-font: "Montserrat", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+:root{
+  --wheel-heading-font: "Chelsea Market", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
 
 .wheel-title .line1,
 .wheel-title .line2{
@@ -452,14 +455,14 @@ body {
 
 /* Baris 1 */
 .wheel-title .line1{
-  font-weight: 900;
+  font-weight: 400;
   font-size: clamp(24px, 4.2vw, 42px);
   color: #5497e3; /* gold solid */
 }
 
 /* Baris 2 */
 .wheel-title .line2{
-  font-weight: 800;
+  font-weight: 400;
   font-size: clamp(18px, 3.2vw, 28px);
   color: #8accff; /* gold sedikit lebih terang */
 }
