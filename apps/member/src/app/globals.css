@@ -1,4 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@800&display=swap');
 
 :root {
   --bg: #020617;
@@ -387,4 +390,76 @@ body {
   position: absolute; inset: 0;
   background: radial-gradient(ellipse at center, rgba(0,0,0,.15), rgba(0,0,0,.45));
   pointer-events: none;
+}
+
+.lux-label{
+  font-family: 'Cinzel', ui-serif, Georgia, serif;
+  font-size: 14px;          /* biarkan logic auto-size kamu override bila ada */
+  text-transform: none;     /* jangan uppercase paksa */
+}
+
+.texture-layer { isolation: isolate; }
+
+/* Jarak & posisi keseluruhan */
+.wheel-stack{
+  width: var(--wheel-size);
+  margin: 0 auto;
+  display: grid;
+  gap: 12px;              /* boleh kecilkan jika ingin lebih rapat */
+  justify-items: center;
+  text-align: center;
+  z-index: 3;
+}
+
+/* Posisi keseluruhan + naikkan sedikit */
+.wheel-banner{
+  position: relative;
+  padding: 12px 28px;
+  border-radius: 999px;
+  background: #000; /* pekat biar kontras */
+  box-shadow:
+    0 12px 26px rgba(0,0,0,.6),
+    0 0 0 2px rgba(255,255,255,.08);
+  transform: translateY(-16px); /* tetap sedikit naik */
+}
+
+.wheel-title{
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+  line-height: 1.06;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Gunakan font sans formal yang jelas (ganti var-nya untuk A/B test) */
+:root { --wheel-heading-font: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+
+.wheel-title .line1,
+.wheel-title .line2{
+  font-family: var(--wheel-heading-font);
+  letter-spacing: 0.06em;
+  /* >>> HAPUS efek yang bikin bolong */
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  -webkit-text-stroke: 0 !important;
+  text-shadow: 0 2px 6px rgba(0,0,0,.65); /* cukup 1 bayangan lembut */
+}
+
+/* Baris 1 */
+.wheel-title .line1{
+  font-weight: 900;
+  font-size: clamp(24px, 4.2vw, 42px);
+  color: #F2CC5A; /* gold solid */
+}
+
+/* Baris 2 */
+.wheel-title .line2{
+  font-weight: 800;
+  font-size: clamp(18px, 3.2vw, 28px);
+  color: #FFE08A; /* gold sedikit lebih terang */
 }
