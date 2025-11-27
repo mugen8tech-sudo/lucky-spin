@@ -436,7 +436,7 @@ body {
 }
 
 /* Gunakan font sans formal yang jelas (ganti var-nya untuk A/B test) */
-:root { --wheel-heading-font: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+:root { --wheel-heading-font: "Montserrat", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
 
 .wheel-title .line1,
 .wheel-title .line2{
