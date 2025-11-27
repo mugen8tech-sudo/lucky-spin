@@ -54,8 +54,8 @@ export default function Wheel({
   const outerR = R + 3;
 
   // --- Colors: 2-biru alternating ---
-  const BLUE_LIGHT = '#38bdf8'; // sky-400
-  const BLUE_DARK  = '#0284c7'; // sky-600
+  const BLUE_LIGHT = '#38b8f8'; // sky-400
+  const BLUE_DARK  = '#027bc7'; // sky-600
 
   // Normalisasi segmen input
   const norm = useMemo(() => {
