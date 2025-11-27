@@ -29,6 +29,7 @@ type BuiltSeg = {
   fill: string;
   mode: 'amount' | 'image';
   label: string;   // untuk mode 'amount'
+  amount?: number;      // << NEW: nilai numerik utk baris kedua
   image?: { src: string; size?: number; alt?: string; rotate?: number };
   midDegSVG: number; // 0°=kanan (ruang SVG)
 };
@@ -87,6 +88,7 @@ export default function Wheel({
         arr.push({
           idx: i, d, edgeD, fill, mode: 'amount',
           label: formatCredit((s as any).amount ?? 0),
+          amount: (s as any).amount ?? 0,                 // << NEW
           midDegSVG: mid
         });
       } else {
@@ -101,266 +103,316 @@ export default function Wheel({
     return arr;
   }, [N, step, norm]);
 
+  // Perception compensation: scale up slightly when label is vertical
+  const scaleForAngle = (deg: number) => {
+    const r = (deg * Math.PI) / 180;
+    const s = Math.abs(Math.sin(r)); // 0 at 0/180 (horizontal), 1 at 90/270 (vertical)
+    return 1 + 0.08 * (s * s);       // max +8%, halus di tengah
+  };
+
+  // Ukuran label global (konsisten untuk semua wedge)
+  const labelSizes = useMemo(() => {
+    // ambil angka saja (tanpa "Credit ")
+    const amountTexts = wedges
+      .filter(w => w.mode === 'amount')
+      .map(w => w.label.replace(/^Credit\s+/i, ''));
+
+    // fit maksimal yang aman untuk semua nominal
+    let amountFit = 24; // batas atas
+    for (const t of amountTexts) {
+      amountFit = Math.min(amountFit, fitFontByChord(t, step, textR, 13, 24));
+    }
+
+    // kapasitas aman untuk kata "CREDIT"
+    const creditFit = fitFontByChord('CREDIT', step, textR, 10, 28);
+
+    const amountSize = Math.round(amountFit);
+    const creditSize = Math.round(Math.min(creditFit, amountSize * 0.82)); // baris 1 sedikit lebih kecil
+
+    return { amountSize, creditSize };
+  }, [wedges, step, textR]);
+
   const pointerCls = winningIndex != null ? 'pointer shake' : 'pointer';
   const hubStroke = isDark(hubFill) ? '#1f2937' : '#e5e7eb';
 
   return (
-    <div className="wheel-frame">
-      <div className={pointerCls} />
+    <div className="wheel-stack">
+      <div className="wheel-banner" role="heading" aria-level={2}>
+        <h2 className="wheel-title">
+          <span className="line1">SPIN SEKARANG</span>
+          <span className="line2">DAPATKAN HADIAHNYA</span>
+        </h2>
+      </div>
+      
+      <div className="wheel-frame">
+        <div className={pointerCls} />
 
-      <div className="wheel">
-        <div className="bezel-outer" />
-        <div className="bezel-inner" />
+        <div className="wheel">
+          <div className="bezel-outer" />
+          <div className="bezel-inner" />
 
-        {/* Disk berputar */}
-        <div
-          className="wheel-disk"
-          style={{
-            transform: `rotate(${rotationDeg}deg)`,
-            transition: spinning ? `transform ${spinMs}ms cubic-bezier(0.12, 0.01, 0, 1)` : 'none',
-          }}
-        >
-          <svg width="100%" height="100%" viewBox="0 0 500 500" shapeRendering="geometricPrecision">
-            {/* ===== Luxury defs (gradients & filters) ===== */}
-            <defs>
-              {/* === Rim dots (blue glow) === */}
-              <radialGradient id="dot-blue-core" cx="50%" cy="50%" r="50%">
-                <stop offset="0%"  stopColor="#e0f2fe"/>
-                <stop offset="55%" stopColor="#38bdf8"/>
-                <stop offset="100%" stopColor="#0ea5e9"/>
-              </radialGradient>
+          {/* Disk berputar */}
+          <div
+            className="wheel-disk"
+            style={{
+              transform: `rotate(${rotationDeg}deg)`,
+              transition: spinning ? `transform ${spinMs}ms cubic-bezier(0.12, 0.01, 0, 1)` : 'none',
+            }}
+          >
+            <svg width="100%" height="100%" viewBox="0 0 500 500" shapeRendering="geometricPrecision">
+              {/* ===== Luxury defs (gradients & filters) ===== */}
+              <defs>
+                {/* === Rim dots (blue glow) === */}
+                <radialGradient id="dot-blue-core" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%"  stopColor="#e0f2fe"/>
+                  <stop offset="55%" stopColor="#38bdf8"/>
+                  <stop offset="100%" stopColor="#0ea5e9"/>
+                </radialGradient>
 
-              <filter id="dot-blue-glow" x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="b"/>
-                <feMerge>
-                  <feMergeNode in="b"/>
-                  <feMergeNode in="SourceGraphic"/>
-                </feMerge>
-              </filter>
+                <filter id="dot-blue-glow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="b"/>
+                  <feMerge>
+                    <feMergeNode in="b"/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
               
-              {/* Gradient emas untuk ring */}
-              <linearGradient id="lux-gold" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%"  stopColor="#FFF6B7"/>
-                <stop offset="35%" stopColor="#F4DA7A"/>
-                <stop offset="65%" stopColor="#DEBA5A"/>
-                <stop offset="100%" stopColor="#A27C2E"/>
-              </linearGradient>
+                {/* Gradient emas untuk ring */}
+                <linearGradient id="lux-gold" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%"  stopColor="#FFF6B7"/>
+                  <stop offset="35%" stopColor="#F4DA7A"/>
+                  <stop offset="65%" stopColor="#DEBA5A"/>
+                  <stop offset="100%" stopColor="#A27C2E"/>
+                </linearGradient>
 
-              {/* Gradient label (mutiara) */}
-              <linearGradient id="lux-label-grad" x1="0" y1="1" x2="0" y2="0">
-                <stop offset="0%"  stopColor="#e6ecf5"/>
-                <stop offset="50%" stopColor="#ffffff"/>
-                <stop offset="100%" stopColor="#dfe7f2"/>
-              </linearGradient>
+                {/* Gradient label (mutiara) */}
+                <linearGradient id="lux-label-grad" x1="0" y1="1" x2="0" y2="0">
+                  <stop offset="0%"  stopColor="#e6ecf5"/>
+                  <stop offset="50%" stopColor="#ffffff"/>
+                  <stop offset="100%" stopColor="#dfe7f2"/>
+                </linearGradient>
 
-              {/* Inner shadow halus untuk wedge */}
-              <filter id="lux-inner" x="-20%" y="-20%" width="140%" height="140%">
-                <feOffset dx="0" dy="1" />
-                <feGaussianBlur stdDeviation="2.5" result="b"/>
-                <feComposite in="b" in2="SourceAlpha" operator="out" result="innershadow"/>
-                <feColorMatrix in="innershadow" type="matrix"
-                  values="0 0 0 0 0
-                          0 0 0 0 0
-                          0 0 0 0 0
-                          0 0 0 .45 0"/>
-                <feComposite in="SourceGraphic" />
-              </filter>
+                {/* Inner shadow halus untuk wedge */}
+                <filter id="lux-inner" x="-20%" y="-20%" width="140%" height="140%">
+                  <feOffset dx="0" dy="1" />
+                  <feGaussianBlur stdDeviation="2.5" result="b"/>
+                  <feComposite in="b" in2="SourceAlpha" operator="out" result="innershadow"/>
+                  <feColorMatrix in="innershadow" type="matrix"
+                    values="0 0 0 0 0
+                            0 0 0 0 0
+                            0 0 0 0 0
+                            0 0 0 .45 0"/>
+                  <feComposite in="SourceGraphic" />
+                </filter>
 
-              {/* Glow tipis untuk teks */}
-              <filter id="lux-text-glow">
-                <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="#000" floodOpacity=".55"/>
-              </filter>
+                {/* Glow tipis untuk teks */}
+                <filter id="lux-text-glow">
+                  <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="#000" floodOpacity=".55"/>
+                </filter>
 
-              {/* === Stone texture (fractal noise) === */}
-              <filter id="stone-noise" x="-10%" y="-10%" width="120%" height="120%">
-                <feTurbulence type="fractalNoise" baseFrequency="1.2" numOctaves="5" seed="11" result="turb" />
-                <feColorMatrix in="turb" type="saturate" values="0" result="mono"/>
-                <feComponentTransfer in="mono">
-                  <feFuncR type="gamma" amplitude="1" exponent="1.25" offset="0"/>
-                  <feFuncG type="gamma" amplitude="1" exponent="1.25" offset="0"/>
-                  <feFuncB type="gamma" amplitude="1" exponent="1.25" offset="0"/>
-                  <feFuncA type="table" tableValues="0 0 .10 .18 .26 .34 .42 .50 .58 .66"/>
-                </feComponentTransfer>
-              </filter>
+                {/* === Stone texture (fractal noise) === */}
+                <filter id="stone-noise" x="-10%" y="-10%" width="120%" height="120%">
+                  <feTurbulence type="fractalNoise" baseFrequency="1.2" numOctaves="5" seed="11" result="turb" />
+                  <feColorMatrix in="turb" type="saturate" values="0" result="mono"/>
+                  <feComponentTransfer in="mono">
+                    <feFuncR type="gamma" amplitude="1" exponent="1.25" offset="0"/>
+                    <feFuncG type="gamma" amplitude="1" exponent="1.25" offset="0"/>
+                    <feFuncB type="gamma" amplitude="1" exponent="1.25" offset="0"/>
+                    <feFuncA type="table" tableValues="0 0 .10 .18 .26 .34 .42 .50 .58 .66"/>
+                  </feComponentTransfer>
+                </filter>
 
-              {/* clipPath untuk masing-masing wedge */}
-              {wedges.map(w => (
-                <clipPath key={`clip-${w.idx}`} id={`clip-${w.idx}`} clipPathUnits="userSpaceOnUse">
-                  <path d={w.d}/>
-                </clipPath>
-              ))}
-            </defs>
+                {/* clipPath untuk masing-masing wedge */}
+                {wedges.map(w => (
+                  <clipPath key={`clip-${w.idx}`} id={`clip-${w.idx}`} clipPathUnits="userSpaceOnUse">
+                    <path d={w.d}/>
+                  </clipPath>
+                ))}
+              </defs>
 
-            {/* Wedges */}
-            <g className="wedge-layer" filter="url(#lux-inner)" aria-hidden>
-              {wedges.map(w => (
-                <g key={`w-${w.idx}`}>
-                  <path d={w.d} fill={w.fill} />
-                  <path d={w.d} fill="none" stroke="rgba(15,23,42,.22)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-                </g>
-              ))}
-            </g>
-
-            {/* Stone texture per wedge (2-layer supaya terlihat di biru) */}
-            <g className="texture-layer" aria-hidden style={{ isolation: 'isolate' as any }}>
-              {wedges.map(w => (
-                <g key={`tex-${w.idx}`} clipPath={`url(#clip-${w.idx})`}>
-                  {/* Layer 1: highlights lembut */}
-                  <rect
-                    x="0" y="0" width="500" height="500"
-                    fill="#ffffff"
-                    filter="url(#stone-noise)"
-                    opacity=".48"                                       // naikkan kalau mau lebih kelihatan
-                    style={{ mixBlendMode: 'soft-light', pointerEvents: 'none' }}
-                  />
-                  {/* Layer 2: urat gelap tipis (diputar sedikit) */}
-                  <rect
-                    x="0" y="0" width="500" height="500"
-                    fill="#000000"
-                    filter="url(#stone-noise)"
-                    transform="rotate(35 250 250)"
-                    opacity=".16"
-                    style={{ mixBlendMode: 'multiply', pointerEvents: 'none' }}
-                  />
-                </g>
-              ))}
-            </g>
-
-            {/* Ring emas tipis */}
-            <g aria-hidden>
-              <circle cx={cx} cy={cy} r={R - 0.5} fill="none"
-                      stroke="url(#lux-gold)" strokeWidth="2" opacity=".85" />
-              <circle cx={cx} cy={cy} r={R - 3.5} fill="none"
-                      stroke="rgba(255,255,255,.10)" strokeWidth="1" />
-              <circle cx={cx} cy={cy} r={outerR} fill="none"
-                      stroke="rgba(15,23,42,.55)" strokeWidth="3" vectorEffect="non-scaling-stroke" />
-            </g>
-
-            {/* Rim dots at each wedge midpoint (on outer ring) */}
-            <g className="rim-dots" aria-hidden>
-              {wedges.map((w, i) => {
-                const isWin = typeof winningIndex === 'number' && winningIndex === i;
-
-                // POSISI: taruh di ring terluar, sedikit (+1.2px) ke luar agar “menyentuh” pointer
-                const dotR = outerR + 2.5;  // sebelumnya: R - 4 (terlalu ke dalam)
-                const base =
-                  `translate(${cx} ${cy}) rotate(${w.midDegSVG + 90}) translate(0 ${-dotR})`;
-
-                return (
-                  <g key={`dot-${i}`} transform={base} filter="url(#dot-blue-glow)">
-                    {/* halos / glow */}
-                    <circle r={isWin ? 13 : 9}  fill="#38bdf8" opacity={isWin ? 0.22 : 0.14}/>
-                    <circle r={isWin ? 9.5 : 7} fill="#0ea5e9" opacity={isWin ? 0.24 : 0.16}/>
-                    {/* bright core tepat di ring */}
-                    <circle r={isWin ? 3.8 : 2.8} fill="url(#dot-blue-core)"/>
+              {/* Wedges */}
+              <g className="wedge-layer" filter="url(#lux-inner)" aria-hidden>
+                {wedges.map(w => (
+                  <g key={`w-${w.idx}`}>
+                    <path d={w.d} fill={w.fill} />
+                    <path d={w.d} fill="none" stroke="rgba(15,23,42,.22)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
                   </g>
-                );
-              })}
-            </g>
-
-            {/* Highlight pemenang */}
-            {typeof winningIndex === 'number' && wedges[winningIndex] && (
-              <g className="winner-layer" aria-hidden>
-                <path d={wedges[winningIndex].d} className="wedge-win-fill" />
-                <path d={wedges[winningIndex].edgeD} className="wedge-win-arc" vectorEffect="non-scaling-stroke" />
+                ))}
               </g>
-            )}
 
-            {/* Label & Ikon (tangent + auto-flip) */}
-            <g className="labels-layer">
-              {wedges.map(w => {
-                const rotateForPosition = w.midDegSVG + 90; // radial ke bisektor
-                const rotateForTangent  = 90;                // radial → tangent
-                const abs = normDeg(rotationDeg + rotateForPosition + rotateForTangent);
-                const flip = (abs > 90 && abs < 270) ? 180 : 0;
+              {/* Stone texture per wedge (2-layer supaya terlihat di biru) */}
+              <g className="texture-layer" aria-hidden style={{ isolation: 'isolate' as any }}>
+                {wedges.map(w => (
+                  <g key={`tex-${w.idx}`} clipPath={`url(#clip-${w.idx})`}>
+                    {/* Layer 1: highlights lembut */}
+                    <rect
+                      x="0" y="0" width="500" height="500"
+                      fill="#ffffff"
+                      filter="url(#stone-noise)"
+                      opacity=".48"                                       // naikkan kalau mau lebih kelihatan
+                      style={{ mixBlendMode: 'soft-light', pointerEvents: 'none' }}
+                    />
+                    {/* Layer 2: urat gelap tipis (diputar sedikit) */}
+                    <rect
+                      x="0" y="0" width="500" height="500"
+                      fill="#000000"
+                      filter="url(#stone-noise)"
+                      transform="rotate(35 250 250)"
+                      opacity=".16"
+                      style={{ mixBlendMode: 'multiply', pointerEvents: 'none' }}
+                    />
+                  </g>
+                ))}
+              </g>
 
-                const base =
-                  `translate(${cx} ${cy}) ` +
-                  `rotate(${rotateForPosition}) ` +
-                  `translate(0 ${-textR})` +
-                  `rotate(${rotateForTangent + flip})`;
+              {/* Ring emas tipis */}
+              <g aria-hidden>
+                <circle cx={cx} cy={cy} r={R - 0.5} fill="none"
+                        stroke="url(#lux-gold)" strokeWidth="2" opacity=".85" />
+                <circle cx={cx} cy={cy} r={R - 3.5} fill="none"
+                        stroke="rgba(255,255,255,.10)" strokeWidth="1" />
+                <circle cx={cx} cy={cy} r={outerR} fill="none"
+                        stroke="rgba(15,23,42,.55)" strokeWidth="3" vectorEffect="non-scaling-stroke" />
+              </g>
 
-                if (w.mode === 'amount') {
-                  const fontSize = fitFontByChord(w.label, step, textR, 14, 22);
+              {/* Rim dots at each wedge midpoint (on outer ring) */}
+              <g className="rim-dots" aria-hidden>
+                {wedges.map((w, i) => {
+                  const isWin = typeof winningIndex === 'number' && winningIndex === i;
+
+                  // POSISI: taruh di ring terluar, sedikit (+1.2px) ke luar agar “menyentuh” pointer
+                  const dotR = outerR + 2.5;  // sebelumnya: R - 4 (terlalu ke dalam)
+                  const base =
+                    `translate(${cx} ${cy}) rotate(${w.midDegSVG + 90}) translate(0 ${-dotR})`;
+
                   return (
-                    <g key={`lab-${w.idx}`} transform={base}>
-                      <text
-                        className={winningIndex === w.idx ? 'label win-label' : 'label'}
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        dy="0.35em"
-                        fontSize={fontSize}
-                        /* teks putih + outline gelap tipis */
-                        fill="#ffffff"
-                        stroke="#000000"
-                        strokeWidth={0.6}
-                        strokeOpacity={0.45}
-                        filter="url(#lux-text-glow)"
-                        style={{
-                          fontFamily: "'Cinzel', ui-serif, Georgia, serif",
-                          fontWeight: 700,
-                          letterSpacing: '.4px',
-                          paintOrder: 'stroke fill',
-                        }}
-                      >
-                        {w.label}
-                      </text>
+                    <g key={`dot-${i}`} transform={base} filter="url(#dot-blue-glow)">
+                      {/* halos / glow */}
+                      <circle r={isWin ? 13 : 9}  fill="#38bdf8" opacity={isWin ? 0.22 : 0.14}/>
+                      <circle r={isWin ? 9.5 : 7} fill="#0ea5e9" opacity={isWin ? 0.24 : 0.16}/>
+                      {/* bright core tepat di ring */}
+                      <circle r={isWin ? 3.8 : 2.8} fill="url(#dot-blue-core)"/>
                     </g>
                   );
-                }
+                })}
+              </g>
 
-                if (w.mode === 'image' && w.image?.src) {
-                  const chord = chordLen(textR, step);
-                  const auto  = Math.min(36, Math.max(22, chord * 0.52));
-                  const size  = w.image.size ?? auto;
-                  const half  = size / 2;
-                  const extra = w.image.rotate ?? 0;
+              {/* Highlight pemenang */}
+              {typeof winningIndex === 'number' && wedges[winningIndex] && (
+                <g className="winner-layer" aria-hidden>
+                  <path d={wedges[winningIndex].d} className="wedge-win-fill" />
+                  <path d={wedges[winningIndex].edgeD} className="wedge-win-arc" vectorEffect="non-scaling-stroke" />
+                </g>
+              )}
 
-                  // 1) Rotasi ke bisektor wedge (posisi)
-                  const rotateForPosition = w.midDegSVG + 90;
-                  // 2) Rotasi agar IKON "berdiri" (bukan tidur) → 0°
-                  const rotateForAlong    = 0;
-
-                  // auto-flip agar tetap tegak di sisi kiri roda (opsional)
-                  const abs  = normDeg(rotationDeg + rotateForPosition + rotateForAlong);
+              {/* Label & Ikon (tangent + auto-flip) */}
+              <g className="labels-layer">
+                {wedges.map(w => {
+                  const rotateForPosition = w.midDegSVG + 90; // radial ke bisektor
+                  const rotateForTangent  = 90;                // radial → tangent
+                  const abs = normDeg(rotationDeg + rotateForPosition + rotateForTangent);
                   const flip = (abs > 90 && abs < 270) ? 180 : 0;
 
                   const base =
                     `translate(${cx} ${cy}) ` +
                     `rotate(${rotateForPosition}) ` +
                     `translate(0 ${-textR})` +
-                    `rotate(${rotateForAlong + flip})`; // <-- tidak lagi 90°
+                    `rotate(${rotateForTangent + flip})`;
 
-                  return (
-                    <g key={`img-${w.idx}`} transform={base} className="icon-label">
-                      <image
-                        href={w.image.src}
-                        x={-half}
-                        y={-half}
-                        width={size}
-                        height={size}
-                        preserveAspectRatio="xMidYMid meet"
-                        transform={`rotate(${extra})`}
-                        style={{ pointerEvents: 'none', transformBox: 'fill-box', transformOrigin: '50% 50%' }}
-                      >
-                        {w.image.alt ? <title>{w.image.alt}</title> : null}
-                      </image>
-                    </g>
-                  );
-                }
+                  if (w.mode === 'amount') {
+                    const amountOnly = w.label.replace(/^Credit\s+/i, '');
+                    const { amountSize, creditSize } = labelSizes;
 
-                return null;
-              })}
-            </g>
+                    // NEW: kompensasi sudut
+                    const scale = scaleForAngle(w.midDegSVG);
 
-            {/* Rim luar */}
-            <circle cx={cx} cy={cy} r={outerR} fill="none" stroke="rgba(15,23,42,.55)" strokeWidth="3" vectorEffect="non-scaling-stroke" />
-          </svg>
-        </div>
+                    return (
+                      <g key={`lab-${w.idx}`} transform={base}>
+                        {/* scale di titik tulis (origin sudah di sini), jadi tidak geser posisi */}
+                        <g transform={`scale(${scale})`}>
+                          <text
+                            className={winningIndex === w.idx ? 'label win-label' : 'label'}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                            filter="url(#lux-text-glow)"
+                            fill="#ffffff"
+                            stroke="#000000"
+                            strokeWidth={0.7}
+                            strokeOpacity={0.5}
+                            vectorEffect="non-scaling-stroke"   // <<< penting agar outline tetap konstan
+                            style={{
+                              fontFamily:
+                                "var(--wheel-label-font, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif)",
+                              fontWeight: 800,
+                              paintOrder: 'stroke fill',
+                              letterSpacing: '.2px',
+                            }}
+                          >
+                            <tspan className="tcredit" x="0" dy="-0.35em" fontSize={creditSize}>
+                              CREDIT
+                            </tspan>
+                            <tspan className="tamount" x="0" dy="1.2em" fontSize={amountSize} fontWeight={900}>
+                              {amountOnly}
+                            </tspan>
+                          </text>
+                        </g>
+                      </g>
+                    );
+                  }
 
-        {/* Hub */}
-        <div className="hub" style={{ backgroundColor: hubFill, boxShadow: `inset 0 0 0 5px ${hubStroke}, 0 6px 18px rgba(0,0,0,.45)` }}>
-          <div className="center-ui">{children}</div>
+                  if (w.mode === 'image' && w.image?.src) {
+                    const chord = chordLen(textR, step);
+                    const auto  = Math.min(36, Math.max(22, chord * 0.52));
+                    const size  = w.image.size ?? auto;
+                    const half  = size / 2;
+                    const extra = w.image.rotate ?? 0;
+
+                    // 1) Rotasi ke bisektor wedge (posisi)
+                    const rotateForPosition = w.midDegSVG + 90;
+                    // 2) Rotasi agar IKON "berdiri" (bukan tidur) → 0°
+                    const rotateForAlong    = 0;
+
+                    // auto-flip agar tetap tegak di sisi kiri roda (opsional)
+                    const abs  = normDeg(rotationDeg + rotateForPosition + rotateForAlong);
+                    const flip = (abs > 90 && abs < 270) ? 180 : 0;
+
+                    const base =
+                      `translate(${cx} ${cy}) ` +
+                      `rotate(${rotateForPosition}) ` +
+                      `translate(0 ${-textR})` +
+                      `rotate(${rotateForAlong + flip})`; // <-- tidak lagi 90°
+
+                    return (
+                      <g key={`img-${w.idx}`} transform={base} className="icon-label">
+                        <image
+                          href={w.image.src}
+                          x={-half}
+                          y={-half}
+                          width={size}
+                          height={size}
+                          preserveAspectRatio="xMidYMid meet"
+                          transform={`rotate(${extra})`}
+                          style={{ pointerEvents: 'none', transformBox: 'fill-box', transformOrigin: '50% 50%' }}
+                        >
+                          {w.image.alt ? <title>{w.image.alt}</title> : null}
+                        </image>
+                      </g>
+                    );
+                  }
+
+                  return null;
+                })}
+              </g>
+
+              {/* Rim luar */}
+              <circle cx={cx} cy={cy} r={outerR} fill="none" stroke="rgba(15,23,42,.55)" strokeWidth="3" vectorEffect="non-scaling-stroke" />
+            </svg>
+          </div>
+
+          {/* Hub */}
+          <div className="hub" style={{ backgroundColor: hubFill, boxShadow: `inset 0 0 0 5px ${hubStroke}, 0 6px 18px rgba(0,0,0,.45)` }}>
+            <div className="center-ui">{children}</div>
+          </div>
         </div>
       </div>
     </div>
