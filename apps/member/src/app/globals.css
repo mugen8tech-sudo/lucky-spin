@@ -438,7 +438,7 @@ body {
 
 /* Gunakan font sans formal yang jelas (ganti var-nya untuk A/B test) */
 :root{
-  --wheel-heading-font: "Chelsea Market", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --wheel-heading-font: "Montserrat", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
 .wheel-title .line1,
@@ -455,14 +455,14 @@ body {
 
 /* Baris 1 */
 .wheel-title .line1{
-  font-weight: 400;
+  font-weight: 900;
   font-size: clamp(24px, 4.2vw, 42px);
   color: #5497e3; /* gold solid */
 }
 
 /* Baris 2 */
 .wheel-title .line2{
-  font-weight: 400;
+  font-weight: 800;
   font-size: clamp(18px, 3.2vw, 28px);
   color: #8accff; /* gold sedikit lebih terang */
 }
