@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import RainFX from '../components/RainFX';
+import VideoBG from '../components/VideoBG';
 import LightningFX from '../components/LightningFX';
 import Wheel, { type SegmentSpec as WheelSegmentSpec } from '../components/Wheel';
 
