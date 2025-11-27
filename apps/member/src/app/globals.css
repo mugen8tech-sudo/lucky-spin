@@ -454,12 +454,12 @@ body {
 .wheel-title .line1{
   font-weight: 900;
   font-size: clamp(24px, 4.2vw, 42px);
-  color: #F2CC5A; /* gold solid */
+  color: #5497e3; /* gold solid */
 }
 
 /* Baris 2 */
 .wheel-title .line2{
   font-weight: 800;
   font-size: clamp(18px, 3.2vw, 28px);
-  color: #FFE08A; /* gold sedikit lebih terang */
+  color: #8accff; /* gold sedikit lebih terang */
 }
